@@ -23,7 +23,7 @@ public:
 
   
 
-  OMPL(std::vector<double> lowerBound, std::vector<double> upperBound,
+  OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound,
         Eigen::MatrixXd _V,
         Eigen::MatrixXi _F,
         BVH& _bvh);

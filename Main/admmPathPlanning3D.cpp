@@ -306,9 +306,13 @@ int main(int argc, char *argv[])
   else if(init_spline==2)
   {
     //scale=j["scale"].get<double>();
-    std::vector<double> lowerBound, upperBound;
-    lowerBound.resize(3,-10);
-    upperBound.resize(3,10);
+    Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
+    Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
+    std::cout<<minV<<"\n";
+    std::cout<<maxV<<"\n";
+    Eigen::VectorXd lowerBound, upperBound;
+    lowerBound=1.2*minV;
+    upperBound=1.2*maxV;
     OMPL ompl(lowerBound, upperBound,
                V,F,bvh);
       

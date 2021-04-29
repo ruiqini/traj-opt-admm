@@ -27,142 +27,7 @@ class Separate
 {
   public:
     typedef Eigen::MatrixXd Data;
-    /*
-    typedef CGAL::MP_Float ET;
-    //typedef CGAL::Homogeneous<ET>                         K;
-    typedef CGAL::Homogeneous<double>                         K;
-    typedef K::Point_3                                        Point;
-    // ... and the EXACT traits class based on the inexcat kernel
-    typedef CGAL::Polytope_distance_d_traits_3<K, ET, double> Traits;
-    //typedef CGAL::Polytope_distance_d<Traits>                 Polytope_distance;
-    //typedef CGAL::Polytope_distance_d_traits_3<K> Traits;
-    typedef CGAL::Polytope_distance_d<Traits>     Polytope_distance;
-    */
-    /*
-    static void svm(const Data& position, const Data & _position, 
-                          Eigen::Vector3d& c, double& d)
-    {
-        int row=_position.rows();
-        Eigen::MatrixXd A(order_num+1+row, 4);
-        
-        A.block(0,0,order_num+1,3)=position;
-        A.block(order_num+1,0,row,3)=-_position;
-        A.col(3).setOnes();
-        A.block(order_num+1,3,row,1)*=-1;
-
-        Eigen::MatrixXd Q(4,4);
-        Q.setIdentity();
-        Q(3,3)=0;
-
-        Eigen::VectorXd  lc(order_num+1+row);
-        lc.setOnes();
-
-        Eigen::VectorXd b(4);
-
-        Eigen::VectorXd b_=b; b_.setZero();
-        QPwarper::QP(Q, b_,
-                     A, lc, b);
-        c=b.head(3);
-        d=b(3);
-        
-        //std::cout<<"---\n";
-        //std::cout<<c<<"\n"<<d<<"\n\n";
-
-        d+=1;
-
-        double c_n=c.norm();
-        c/=c_n;
-        d/=c_n;
-
-        
-
-        d-=offset;
-
-        std::cout<<"---\n";
-        std::cout<<c<<"\n"<<d<<"\n\n";
-    }
-    */
-   /*
-    static bool cgal(const Data& position, const Data & _position, const double & distance,
-                      Eigen::Vector3d& c, double& d)
-    {
-        // the cube [0,1]^3
-        std::vector<Point> PList;
-        PList.resize((order_num+1));
-        for(int i=0;i<=order_num;i++)
-        {
-          PList[i]=Point(position(i,0),position(i,1),position(i,2));
-        }
-        Point* P=PList.data();
-        // the cube [2,3]^3
-        Point Q[3] = { Point(_position(0,0),_position(0,1),_position(0,2)), 
-                      Point(_position(1,0),_position(1,1),_position(1,2)), 
-                      Point(_position(2,0),_position(2,1),_position(2,2))};
-        Polytope_distance pd(P, P+(order_num+1), Q, Q+3);
-        assert (pd.is_valid());
-        
-        // get squared distance (2,2,2)-(1,1,1))^2 = 3
-        double cgal_distance2=
-        CGAL::to_double (pd.squared_distance_numerator()) /
-        CGAL::to_double (pd.squared_distance_denominator()) ;
-        //return cgal_distance2 <= d*d;
-        if(cgal_distance2 > distance*distance)
-           return false;
-
-        // get points that realize the distance
-        Eigen::Vector3d p, q;
-        int iter=0;
-        Polytope_distance::Coordinate_iterator  coord_it;
-        //std::cout << "p:"; // homogeneous point from first cube, (1,1,1,1)
-        for (coord_it = pd.realizing_point_p_coordinates_begin();
-            coord_it != pd.realizing_point_p_coordinates_end();
-            ++coord_it)
-          {
-            if(iter<3)
-            {
-              double coord=CGAL::to_double(*coord_it);
-              p(iter)=coord;
-            }
-            iter++;
-          }
-        //std::cout << " " << *coord_it;
-        //std::cout << std::endl;
-
-        iter=0;
-        //std::cout << "q:"; // homogeneous point from second cube, (2,2,2,1)
-        for (coord_it = pd.realizing_point_q_coordinates_begin();
-            coord_it != pd.realizing_point_q_coordinates_end();
-            ++coord_it)
-          {
-            if(iter<3)
-            {
-              double coord=CGAL::to_double(*coord_it);
-              q(iter)=coord;
-            }
-            iter++;
-
-          }
-          //std::cout << " " << *coord_it;
-          //std::cout << std::endl;
-
-          c=p-q;
-          d=INFINITY;
-          for(int i=0;i<3;i++)
-          {
-            double d0=-c.dot(_position.row(i));
-            if(d>d0)
-              d=d0;
-          }
-
-          double c_n=c.norm();
-          c/=c_n;
-          d/=c_n;
-
-          d-=offset;
-          //std::cout<<c<<"\n"<<d<<"\n\n";
-          return true;
-    }
-    */
+    
     static bool opengjk(const Data& position, const Data & _position, const double & distance,
                       Eigen::Vector3d& c, double& d)
     {
@@ -279,9 +144,84 @@ class Separate
       
     }
 
+    static void optimal_d(const Data& position, const Data & _position, 
+                          const Eigen::Vector3d& c, const double& d0, const double& d1, double& d)
+    {
+      /*
+                    self_c_lists[p0][tr_id].push_back(c);
+                    self_d_lists[p0][tr_id].push_back(d-0.5*offset);
+
+                    self_c_lists[p1][tr_id].push_back(-c);
+                    self_d_lists[p1][tr_id].push_back(-d-0.5*offset);
+      */
+
+      double energy;
+      double grad_d, hessian_d;
+      double dist;
+
+      
+      double step=1.0;
+      while(true)
+      {
+        energy=0;
+        grad_d=0;
+        hessian_d=0;
+        for(int j=0;j<=order_num;j++)
+        {
+            //d=P[j].dot(c_list[k])+d_list[k];
+            dist=position.row(j).dot(c)+d-0.5*offset;
+            if(dist<margin)
+            { 
+                energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
+                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);  
+
+                double e1=-(2*(dist-margin)*log(dist/margin)+(dist-margin)*(dist-margin)/dist);
+
+                double e2=-(2*log(dist/margin)+4*(dist-margin)/dist-(dist-margin)*(dist-margin)/(dist*dist)); 
+
+                grad_d+=e1;
+                hessian_d+=e2;
+            }
+
+            dist=-_position.row(j).dot(c)-d-0.5*offset;
+            if(dist<margin)
+            { 
+                energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
+                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);   
+
+                double e1=-(2*(dist-margin)*log(dist/margin)+(dist-margin)*(dist-margin)/dist);
+
+                double e2=-(2*log(dist/margin)+4*(dist-margin)/dist-(dist-margin)*(dist-margin)/(dist*dist)); 
+
+                grad_d+=-e1;
+                hessian_d+=e2;
+            }
+        }
+
+        double direction_d=-grad_d/hessian_d;
+        /*
+        step=1.0;
+        if(d+step*direction_d<d0)
+        {
+
+        }
+        else if(d+step*direction_d>d1)
+        {
+
+        }
+        */
+        d=d+step*direction_d;
+        //std::cout<<grad_d<<"\n";
+        if(std::abs(grad_d)<0.01)
+          break;
+
+      }
+      //std::cout<<"\n";
+    }
+
 
     static bool selfgjk(const Data& position, const Data & _position, const double & distance,
-                        Eigen::Vector3d& c, double& d0, double& d1)
+                        Eigen::Vector3d& c, double& d)
     {
       struct simplex  s;
       // Number of vertices defining body 1 and body 2, respectively.          
@@ -378,7 +318,10 @@ class Separate
       
       c/=c_n;
 
+      double d0,d1;
+      
       d0=INFINITY;
+      
       for(int i=0;i<order_num+1;i++)
       {
         double d_=-c.dot(_position.row(i));
@@ -389,12 +332,18 @@ class Separate
       //d0-=offset;
 
       d1=-INFINITY;
+      
       for(int i=0;i<order_num+1;i++)
       {
         double d_=-c.dot(position.row(i));
         if(d1<d_)
           d1=d_;
       }
+      
+      d=0.5*(d0+d1);
+
+      optimal_d(position, _position, c, d0, d1, d);
+      //std::cout<<"d01:"<<d0<<" "<<d1<<"\n";
 
       //d1+=offset;
 
@@ -407,6 +356,8 @@ class Separate
       
     }
 
+    
+    /*
     static bool trigjk(const Data& position, const Data & _position, const double & distance,
                       Eigen::Vector3d& c, double& d0, double& d1)
     {
@@ -530,6 +481,7 @@ class Separate
 
       
     }
+    */
 };
 
 PRJ_END

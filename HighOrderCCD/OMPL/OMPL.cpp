@@ -106,19 +106,19 @@ public:
     
 };
 //OMPL
-OMPL::OMPL(std::vector<double> lowerBound, std::vector<double> upperBound, Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
-                      BVH& _bvh)
+OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::MatrixXd _V,
+           Eigen::MatrixXi _F,
+           BVH& _bvh)
 {
   int dim=lowerBound.size();
   _state=ob::StateSpacePtr(new ob::RealVectorStateSpace(dim));
   ompl::base::RealVectorBounds bounds(dim);
   //lower
   for(int i=0; i<dim; i++)
-    bounds.setLow(i,lowerBound[i]);
+    bounds.setLow(i,lowerBound(i));
   //upper
   for(int i=0; i<dim; i++)
-    bounds.setHigh(i,upperBound[i]);
+    bounds.setHigh(i,upperBound(i));
   //setup
   _state->as<ob::RealVectorStateSpace>()->setBounds(bounds);
   

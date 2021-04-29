@@ -256,16 +256,16 @@ public:
                 int p0=self_collision_pair[i].first;
                 int p1=self_collision_pair[i].second;
                 Eigen::Vector3d c;
-                double d0,d1;
+                double d;
                 Eigen::MatrixXd P0=P_list[p0];
                 Eigen::MatrixXd P1=P_list[p1];
                 
                 if(CCD::SelfKDOPDCD(P0, P1,offset+2*margin))
                 {
                   if(Separate::selfgjk(P0, P1, offset+2*margin,
-                                      c, d0, d1))//cgal
+                                      c, d))//cgal
                   {
-                    double d=0.5*(d0+d1);
+                    
                     self_c_lists[p0][tr_id].push_back(c);
                     self_d_lists[p0][tr_id].push_back(d-0.5*offset);
 
