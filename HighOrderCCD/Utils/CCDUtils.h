@@ -24,16 +24,16 @@ extern std::vector<std::vector<long int>> combination;
 extern int trajectory_num, piece_num, uav_num;
 extern int res;
 extern int iter;
-extern double epsilon2 , epsilon , 
-              distance2, distance, 
-              margin2, margin, 
+extern double epsilon, 
+              distance, 
+              margin, 
               max_step, lambda, wolfe, offset ,
               gnorm, gtime, tnorm,
               mu;
 
 extern std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree, vel_tree, acc_tree;
 extern bool automove, step_choose, adaptive_change, optimize_time;
-extern std::ofstream energy_file, result_file, gn_file, step_file, init_file, eigen_file, plot_file;
+extern std::ofstream  result_file,  init_file;
 
 extern Eigen::MatrixXd M_dynamic;
 
@@ -46,7 +46,6 @@ extern std::vector<Eigen::MatrixXd> convert_list;
 extern double kt, ks;// time s
 extern double vel_limit, acc_limit;
 
-extern std::vector<int> fixed_points;
 extern std::vector<Eigen::Vector3d> axis;//13+3*4
 extern std::vector<Eigen::Vector3d> aabb_axis;
 extern std::vector<Eigen::Vector3d> kdop_axis;
@@ -108,30 +107,7 @@ template <int N>
 class Conversion
 {
   public:
-  /*
-  static void convert_matrix() 
-  {
-    Eigen::MatrixXd M(N+1,N+1);
-    M.setIdentity();
-    Eigen::Matrix3d I0, I1;
-    I0<<0.25, 0.5, 0.25,
-        0,    0.5, 0.5,
-        0,    0,   1;
-    I1<<1,    0,   0,
-        0.5,  0.5, 0,
-        0.25, 0.5, 0.25;
-
-    M.block<3,3>(0,0)=I0;
-    M_tail=M;
-
-    M.setIdentity();
-    M.block<3,3>(N-2,N-2)=I1;
-    M_head=M;
-
-    M.block<3,3>(0,0)=I0;
-    M_convert=M;
-  }
-  */
+  
   static void convert_matrix() 
   {
     Eigen::MatrixXd M(N+1,N+1);
@@ -306,52 +282,7 @@ class Blossom
   }
 
 };
-/*
-template <typename FROM,typename TO>
-struct Convert
-{
-  static TO convert(FROM f) {
-    return f;
-  }
-};
-template <typename TO>
-struct Convert<Rational, TO>
-{
-  static TO convert(Rational f) {
-    return f.to_double();
-  }
-};
-template <typename TO>
-struct Convert<Interval, TO>
-{
-  static TO convert(Interval f) {
-    return f.to_double();
-  }
-};
 
-
-template <typename FROM,typename TO>
-struct Inter
-{
-  static TO inter(FROM f) {
-    return f-f;
-  }
-};
-template <typename TO>
-struct Inter<Rational, TO>
-{
-  static TO inter(Rational f) {
-    return f.to_double()-f.to_double();
-  }
-};
-template <typename TO>
-struct Inter<Interval, TO>
-{
-  static TO inter(Interval f) {
-    return f.sup ()-f.inf();
-  }
-};
-*/
 PRJ_END
 
 #endif

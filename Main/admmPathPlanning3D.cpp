@@ -129,9 +129,7 @@ int main(int argc, char *argv[])
   lambda=j["lambda"].get<double>();
 
   epsilon=j["epsilon"].get<double>();
-  epsilon2 = epsilon*epsilon;
   margin=j["margin"].get<double>();//d hat
-  margin2 = margin*margin;
   automove = j["auto"].get<int>();
   step_choose = j["step_choose"].get<int>();
 
@@ -144,10 +142,7 @@ int main(int argc, char *argv[])
   int if_exit=j["exit"].get<int>();
 
   int if_init_ob=j["init_ob"].get<int>();
-  //int if_init_wp=j["init_wp"].get<int>();
 
-  int if_init_pc=j["init_pc"].get<int>();
-  
   double scale=j["scale"].get<double>();
 
   double stop=j["stop"].get<double>();
@@ -177,16 +172,10 @@ int main(int argc, char *argv[])
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
+  
   if(if_init_ob)
   {
-    if(if_init_pc)
-    {
-      bvh.InitPointcloud(V);
-    }
-    else
-    {
-      bvh.InitObstacle(V,F);
-    }
+    bvh.InitObstacle(V,F);
   }
 
   clock_t time2 = clock();
@@ -196,13 +185,8 @@ int main(int argc, char *argv[])
   vel_limit=2.0;
   acc_limit=2.0;
     
-  energy_file.open ("energy/" +mesh_file + "_energy_file_admm.txt");
   result_file.open ("result/" +mesh_file + "_result_file_admm.txt");
-  gn_file.open ("gn/" +mesh_file + "_gn_file_admm.txt");
-  step_file.open ("step/" +mesh_file + "_step_file_admm.txt");
-  eigen_file.open("eigen/"+mesh_file + "_eigen_file_admm.txt");
-  plot_file.open("plot/"+mesh_file + "_plot_file_admm.txt");
-
+ 
   double init_time=-INFINITY;
   Data spline;
 

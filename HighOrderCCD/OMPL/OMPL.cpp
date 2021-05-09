@@ -95,7 +95,6 @@ public:
     bool checkMotion (const ob::State *s1, const ob::State *s2, std::pair< ob::State *, double > &lastValid) const override
     {
       bool valid=true;
-      std::cout<<"cm2"<<std::endl;
       
       return valid;
     }

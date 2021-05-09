@@ -61,8 +61,6 @@ public:
                     c_lists, d_lists);
       
       clock_t time1 = clock();     
-      gn_file <<gnorm<<std::endl;
-      step_file<<max_step<<std::endl;
       
       std::cout<<"\nupdate slack\n";
       update_slack(spline,  piece_time,
@@ -279,12 +277,8 @@ public:
             }
             solver.compute(h0);    
 
-            eigen_file<<-1<<std::endl;
           }
-          else
-          {
-            eigen_file<<1<<std::endl;
-          }
+          
           
           x0 = solver.solve(ng0);
           //x0=ng0;
@@ -431,12 +425,8 @@ public:
       }
       solver.compute(h0);    
 
-      eigen_file<<-1<<std::endl;
     }
-    else
-    {
-      eigen_file<<1<<std::endl;
-    }
+   
     
     x0 = solver.solve(ng0);
     //x0=ng0;

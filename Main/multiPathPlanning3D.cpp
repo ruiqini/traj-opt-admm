@@ -73,9 +73,7 @@ int main(int argc, char *argv[])
   lambda=j["lambda"].get<double>();
 
   epsilon=j["epsilon"].get<double>();
-  epsilon2 = epsilon*epsilon;
   margin=j["margin"].get<double>();//d hat
-  margin2 = margin*margin;
   automove = j["auto"].get<int>();
   step_choose = j["step_choose"].get<int>();
 
@@ -115,14 +113,9 @@ int main(int argc, char *argv[])
   vel_limit=2.0;
   acc_limit=2.0;
     
-  energy_file.open ("energy/" +mesh_file + "_energy_file_multi.txt");
   result_file.open ("result/" +mesh_file + "_result_file_multi.txt");
-  gn_file.open ("gn/" +mesh_file + "_gn_file_multi.txt");
-  step_file.open ("step/" +mesh_file + "_step_file_multi.txt");
-  eigen_file.open("eigen/"+mesh_file + "_eigen_file_multi.txt");
-  plot_file.open("plot/"+mesh_file + "_plot_file_multi.txt");
-
- 
+  
+  
   uav_num=4;//2
   piece_num=3;
   trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
