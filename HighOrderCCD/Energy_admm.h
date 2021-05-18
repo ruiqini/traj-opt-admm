@@ -224,83 +224,8 @@ class Energy_admm
         return energy;  
 
     }
-    /*
-    static double bound_energy(const Data& spline,const double& piece_time)
-    {
-        double energy=0;
+    
 
-        for(unsigned int tr_id=0;tr_id<vel_tree.size();tr_id++)
-        {
-        
-            int sp_id=std::get<0>(vel_tree[tr_id]);
-            double weight=std::get<1>(vel_tree[tr_id]).second-std::get<1>(vel_tree[tr_id]).first;
-            Eigen::MatrixXd basis=std::get<2>(vel_tree[tr_id]);
-            
-            Eigen::MatrixXd bz;
-            bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
-            
-            Eigen::MatrixXd P=basis*bz;
-
-            double d;
-           
-            for(int j=0;j<order_num;j++)
-            {
-                //Eigen::RowVector3d vel=order_num*(P[j+1]-P[j]);
-                Eigen::RowVector3d vel=order_num*(P.row(j+1)-P.row(j));
-                  //d=vel_limit*piece_time-vel.norm()/weight;
-
-                d=vel_limit-vel.norm()/(weight*piece_time);
-                //d=vel_limit*vel_limit-vel.squaredNorm()/std::pow(weight*piece_time,2);
-                if(d<=0)
-                    return INFINITY;
-                
-                if(d<margin)
-                { 
-                   energy+=-weight*(d-margin)*(d-margin)*log(d/margin); 
-                }
-            }
-        }
-
-
-        
-
-        for(unsigned int tr_id=0;tr_id<acc_tree.size();tr_id++)
-        {
-        
-            int sp_id=std::get<0>(acc_tree[tr_id]);
-            double weight=std::get<1>(acc_tree[tr_id]).second-std::get<1>(acc_tree[tr_id]).first;
-            Eigen::MatrixXd basis=std::get<2>(acc_tree[tr_id]);
-            
-            Eigen::MatrixXd bz;
-            bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
-            
-            Eigen::MatrixXd P=basis*bz;
-
-            double d;
-           
-            for(int j=0;j<order_num-1;j++)
-            {
-                //Eigen::RowVector3d acc=order_num*(order_num-1)*(P[j+2]-2*P[j+1]+P[j]);
-                Eigen::RowVector3d acc=order_num*(order_num-1)*(P.row(j+2)-2*P.row(j+1)+P.row(j));
-                //d=acc_limit*piece_time*piece_time-acc.norm()/(weight*weight);
-                
-                d=acc_limit-acc.norm()/(weight*weight*piece_time*piece_time);
-                //d=acc_limit*acc_limit-acc.squaredNorm()/std::pow(weight*weight*piece_time*piece_time,2);
-                if(d<=0)
-                    return INFINITY;
-                
-                if(d<margin)
-                { 
-                    //std::cout<<"e-acc:"<<acc<<std::endl;
-                   energy+=-weight*(d-margin)*(d-margin)*log(d/margin); 
-                }
-            }
-        }
-
-        return energy;  
-
-    }
-    */
 };
 
 PRJ_END
