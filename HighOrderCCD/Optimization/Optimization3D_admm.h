@@ -159,7 +159,7 @@ public:
     double t_direction;
             
     //clock_t time0 = clock();
-
+    /*
     spline_descent_direction( spline, direction,  piece_time,  t_direction,
                               p_slack,  t_slack,
                               p_lambda,  t_lambda,
@@ -173,8 +173,50 @@ public:
                         V,F, bvh, 
                         c_lists, d_lists);
     //clock_t time2 = clock();
+    */
+   if(spline_descent_direction( spline, direction,  piece_time,  t_direction,
+                              p_slack,  t_slack,
+                              p_lambda,  t_lambda,
+                              c_lists, d_lists))
+    {
+
+      spline_line_search( spline, direction,  piece_time, t_direction,
+                        p_slack, t_slack,
+                        p_lambda,  t_lambda,
+                        V,F, bvh, 
+                        c_lists, d_lists);
+      
+    }
+    else
+    {
+         spline_position_descent_direction( spline, direction,  piece_time,
+                                      p_slack,  t_slack,
+                                      p_lambda,  t_lambda,
+                                      c_lists, d_lists);
+
+          //clock_t time1 = clock();
+                              
+          spline_position_line_search( spline, direction,  piece_time,
+                                        p_slack, t_slack,
+                                        p_lambda,  t_lambda,
+                                        V,F, bvh, 
+                                        c_lists, d_lists);
+          
+        
+          spline_time_descent_direction( spline,  piece_time,  t_direction,
+                                        p_slack,  t_slack,
+                                        p_lambda,  t_lambda);
+
+          //clock_t time1 = clock();
+                              
+          spline_time_line_search( spline,  piece_time, t_direction,
+                                    p_slack, t_slack,
+                                    p_lambda,  t_lambda);
+
+    }
 
 
+ 
     //std::cout<<"descent_direction:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
     //std::cout<<"line_search:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl;
 
@@ -260,27 +302,52 @@ public:
 
           Eigen::VectorXd x, x0;
     
-          Eigen::MatrixXd I=h0; I.setIdentity();
           Eigen::LLT<Eigen::MatrixXd> solver; 
+          Eigen::MatrixXd I=h0; I.setIdentity();
           
           solver.compute(h0);
-          
+          /*
+          if(solver.info() == Eigen::NumericalIssue)//50
+          {
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
+            Eigen::VectorXd eigenvalue=eigensolver.eigenvalues();
+            Eigen::VectorXd inv_eigenvalue=eigenvalue;
+            for(int k=0;k<eigenvalue.size();k++)
+            {
+              if(eigenvalue(k)<0)
+              {
+                eigenvalue(k)=1e-6;
+                
+              }
+              inv_eigenvalue(k)=1.0/eigenvalue(k);
+
+            }
+            
+            //solver.compute(h0);    
+            Eigen::MatrixXd Q = eigensolver.eigenvectors();
+            x0=Q*inv_eigenvalue.asDiagonal()*Q.transpose()*ng0;
+          }
+          else
+          {
+            x0 = solver.solve(ng0);
+          }
+          */
           if(solver.info() == Eigen::NumericalIssue)//50
           {
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
             Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
             if(eigenvalue(0)<0)
             {
-              std::cout<<"sp_id:"<<sp_id<<" "<<piece_num-1<<std::endl;
-              std::cout<<"eigenslack:"<<eigenvalue(0)<<"-----------------------------"<<std::endl;
+              std::cout<<"eigenvalue:"<<eigenvalue(0)<<"-----------------------------"<<std::endl;
               h0=h0-eigenvalue(0)*I+0.01*I;
             }
             solver.compute(h0);    
 
           }
-          
+        
           
           x0 = solver.solve(ng0);
+          
           //x0=ng0;
           wolfe=x0.dot(ng0);
 
@@ -366,7 +433,7 @@ public:
     
   }
 
-  static void spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,
+  static int spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,
                                        const Data& p_slack, const Eigen::VectorXd& t_slack,
                                        const Data& p_lambda, const Eigen::VectorXd& t_lambda,
                                        const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
@@ -407,15 +474,44 @@ public:
     SpMat H=h0.sparseView();
     
     //SpMat I=H; I.setIdentity();
-    Eigen::MatrixXd I=h0; I.setIdentity();
+    
     Eigen::LLT<Eigen::MatrixXd> solver; 
     //Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
     //solver.compute(H);
-    
+    Eigen::MatrixXd I=h0; I.setIdentity();
+
+
     solver.compute(h0);
-    
+    /*
     if(solver.info() == Eigen::NumericalIssue)//50
     {
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
+      Eigen::VectorXd eigenvalue=eigensolver.eigenvalues();
+      Eigen::VectorXd inv_eigenvalue=eigenvalue;
+      for(int k=0;k<eigenvalue.size();k++)
+      {
+        if(eigenvalue(k)<0)
+        {
+          eigenvalue(k)=1e-6;
+          
+        }
+        inv_eigenvalue(k)=1.0/eigenvalue(k);
+
+      }
+      
+      //solver.compute(h0);    
+      Eigen::MatrixXd Q = eigensolver.eigenvectors();
+      x0=Q*inv_eigenvalue.asDiagonal()*Q.transpose()*ng0;
+    }
+    else
+    {
+      x0 = solver.solve(ng0);
+    }
+    */
+
+    if(solver.info() == Eigen::NumericalIssue)//50
+    {
+      /*
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
       Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
       if(eigenvalue(0)<0)
@@ -424,10 +520,10 @@ public:
         h0=h0-eigenvalue(0)*I+0.01*I;
       }
       solver.compute(h0);    
-
+      */
+      return 0;
     }
    
-    
     x0 = solver.solve(ng0);
     //x0=ng0;
     wolfe=x0.dot(ng0);
@@ -438,6 +534,7 @@ public:
     x=x0.head((t_n-4)*3);
     
     t_direction=x0((t_n-4)*3);
+   
     /*
     SpMat H=h.sparseView();
     Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
@@ -474,6 +571,8 @@ public:
     std::cout<<"t_direction:"<<t_direction<<std::endl<<std::endl;
     
     gnorm=ng0.norm();
+
+    return 1;
     //std::cout<<"gnorm:"<<gnorm<<std::endl;
   }
 
@@ -533,6 +632,221 @@ public:
                " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
+
+  }
+
+  static void spline_position_descent_direction(const Data& spline, Data& direction, const double& piece_time, 
+                                                const Data& p_slack, const Eigen::VectorXd& t_slack,
+                                                const Data& p_lambda, const Eigen::VectorXd& t_lambda,
+                                                const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                                const std::vector<std::vector<double>>& d_lists)
+  {
+    int t_n=trajectory_num;
+
+    Eigen::VectorXd grad;
+    Eigen::MatrixXd hessian;
+
+    Gradient_admm::spline_position_gradient(spline,  piece_time,
+                                            p_slack,  t_slack, 
+                                            p_lambda,  t_lambda,
+                                            c_lists, d_lists,
+                                            grad, hessian);
+   
+
+    Eigen::VectorXd ng = -grad.segment(6,(t_n-4)*3);
+    Eigen::MatrixXd h = hessian.block(6,6,(t_n-4)*3,(t_n-4)*3);
+    
+    Eigen::VectorXd ng0((t_n-4)*3);
+    Eigen::MatrixXd h0((t_n-4)*3,(t_n-4)*3);
+    ng0.head((t_n-4)*3)=ng;
+
+    h0.block(0,0,(t_n-4)*3,(t_n-4)*3)=h;
+
+    //std::cout<<h0<<"\n";
+    Eigen::VectorXd x, x0;
+    clock_t time0 = clock();
+
+    SpMat H=h0.sparseView();
+    
+    //SpMat I=H; I.setIdentity();
+    
+    Eigen::LLT<Eigen::MatrixXd> solver; 
+    //Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
+    //solver.compute(H);
+    Eigen::MatrixXd I=h0; I.setIdentity();
+
+
+    solver.compute(h0);
+
+    if(solver.info() == Eigen::NumericalIssue)//50
+    {
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
+      Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
+      if(eigenvalue(0)<0)
+      {
+        std::cout<<"eigenvalue:"<<eigenvalue(0)<<"-----------------------------"<<std::endl;
+        h0=h0-eigenvalue(0)*I+0.01*I;
+      }
+      solver.compute(h0);    
+
+    }
+   
+    x0 = solver.solve(ng0);
+    //x0=ng0;
+    wolfe=x0.dot(ng0);
+    
+    clock_t time1 = clock();
+    std::cout<<"\ntime solve:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
+
+    x=x0.head((t_n-4)*3);
+    
+    Eigen::MatrixXd d(Eigen::Map<Eigen::MatrixXd>(x.data(), 3,t_n-4));
+
+    Eigen::MatrixXd d_=d.transpose();
+    
+    direction.resize(t_n,3);
+   
+    direction.setZero();
+    direction.block(2,0,t_n-4,3)=d_;
+
+    
+    std::cout<<"gn:"<<ng0.norm()<<std::endl;
+    std::cout<<"dn:"<<x0.norm()<<std::endl;
+    
+    gnorm=ng0.norm();
+    //std::cout<<"gnorm:"<<gnorm<<std::endl;
+  }
+
+  static void spline_position_line_search(Data& spline, const Data& direction, const double& piece_time, 
+                                          const Data& p_slack, const Eigen::VectorXd& t_slack,
+                                          const Data& p_lambda, const Eigen::VectorXd& t_lambda,
+                                          const Eigen::MatrixXd & V,const Eigen::MatrixXi& F, BVH& bvh, 
+                                          const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                          const std::vector<std::vector<double>>& d_lists)
+  {
+    clock_t time0 = clock();
+
+    double step=Step::position_step(spline, direction,V,F, bvh);
+    //double step=Step::plane_step(spline, direction,c_lists, d_lists);
+    //double step=Step::mix_step(spline, direction,V,F, bvh,c_lists, d_lists);
+    
+    clock_t time1 = clock();
+
+    std::cout<<"\ntime ccd:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
+    //double time_step=Step::time_step(spline, direction, bvh);
+    //if(time_step<step)
+      //step=time_step;
+    
+    std::cout<<"highcdd:"<<step<<std::endl<<std::endl;
+    
+
+    std::cout.precision(10);
+   
+    std::cout<<"wolfe:"<<wolfe<<std::endl;
+    
+
+    double e=Energy_admm::spline_position_energy(spline, piece_time,
+                                                  p_slack,  t_slack, 
+                                                  p_lambda,  t_lambda,
+                                                  c_lists, d_lists);
+    double init_time=piece_time;
+    //piece_time=init_time+step*t_direction;
+    while(e-1e-4*wolfe*step<Energy_admm::spline_position_energy(spline+step*direction, piece_time,
+                                                                p_slack,  t_slack, 
+                                                                p_lambda,  t_lambda,
+                                                                c_lists, d_lists))
+    {
+      step*=0.8;
+      //piece_time=init_time+step*t_direction;
+    }
+    
+
+    max_step=step;
+    
+    std::cout<<"step:"<<step<<std::endl;
+    std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
+               " "<<lambda*Energy::plane_barrier_energy(spline+step*direction,c_lists,d_lists)<<
+               " "<<lambda*Energy::bound_energy(spline+step*direction,piece_time)<<
+               " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
+    //<<" "<<limit_energy(spline+step*direction)
+    spline=spline+step*direction;
+
+  }
+
+  static void spline_time_descent_direction(const Data& spline, const double& piece_time, double& t_direction,
+                                                const Data& p_slack, const Eigen::VectorXd& t_slack,
+                                                const Data& p_lambda, const Eigen::VectorXd& t_lambda)
+  {
+    int t_n=trajectory_num;
+
+    Eigen::VectorXd grad;
+    Eigen::MatrixXd hessian;
+
+    Gradient_admm::spline_time_gradient(spline,  piece_time,
+                                            p_slack,  t_slack, 
+                                            p_lambda,  t_lambda,
+                                            grad, hessian);
+   
+
+    
+    
+    double ng0=-grad(0);
+    double h0=hessian(0,0);
+    double x0;
+    if(h0>1e-5)
+     x0=ng0/h0;
+    else
+     x0=ng0;
+    wolfe=x0*ng0;
+    
+    t_direction=x0;
+    //std::cout<<"gnorm:"<<gnorm<<std::endl;
+  }
+
+  static void spline_time_line_search(const Data& spline, double& piece_time, const double& t_direction,
+                                          const Data& p_slack, const Eigen::VectorXd& t_slack,
+                                          const Data& p_lambda, const Eigen::VectorXd& t_lambda)
+  {
+    clock_t time0 = clock();
+
+    double step=1.0;
+    //double step=Step::plane_step(spline, direction,c_lists, d_lists);
+    //double step=Step::mix_step(spline, direction,V,F, bvh,c_lists, d_lists);
+    
+    clock_t time1 = clock();
+
+    std::cout<<"\ntime ccd:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
+    
+    if(piece_time+step*t_direction<=0)
+    {
+      step=-0.95*piece_time/t_direction;
+    }
+    
+    std::cout<<"highcdd:"<<step<<std::endl<<std::endl;
+    
+
+    std::cout.precision(10);
+   
+    std::cout<<"wolfe:"<<wolfe<<std::endl;
+    
+
+    double e=Energy_admm::spline_time_energy(spline, piece_time,
+                                                  p_slack,  t_slack, 
+                                                  p_lambda,  t_lambda);
+    double init_time=piece_time;
+    piece_time=init_time+step*t_direction;
+    while(e-1e-4*wolfe*step<Energy_admm::spline_time_energy(spline, piece_time,
+                                                                p_slack,  t_slack, 
+                                                                p_lambda,  t_lambda))
+    {
+      step*=0.8;
+      piece_time=init_time+step*t_direction;
+    }
+    
+
+    max_step=step;
+    
+    
 
   }
 };

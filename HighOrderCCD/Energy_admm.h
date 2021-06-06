@@ -28,7 +28,7 @@ class Energy_admm
                                 const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                                 const std::vector<std::vector<double>>& d_lists) //all piece
     { 
-        double energy=lambda*plane_barrier_energy(spline,c_lists, d_lists)+ lambda*bound_energy(spline,piece_time);
+        double energy=lambda*plane_barrier_energy(spline,c_lists, d_lists) + lambda*bound_energy(spline,piece_time);
 
         for(int sp_id=0;sp_id<piece_num;sp_id++)
         {
@@ -46,6 +46,65 @@ class Energy_admm
                 Eigen::VectorXd lamb=lamb_part.col(j);
                 energy+=lamb.transpose()*x;
             }
+            energy+=t_lambda(sp_id)*(piece_time-t_slack(sp_id));
+        }
+
+        return energy;
+    }
+
+    static double spline_position_energy(const Data& spline, const double& piece_time,
+                                         const Data& p_slack, const Eigen::VectorXd& t_slack, 
+                                         const Data& p_lambda, const Eigen::VectorXd& t_lambda,
+                                         const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                         const std::vector<std::vector<double>>& d_lists) //all piece
+    { 
+        double energy=lambda*plane_barrier_energy(spline,c_lists, d_lists) + lambda*bound_energy(spline,piece_time);
+
+        for(int sp_id=0;sp_id<piece_num;sp_id++)
+        {
+            
+            Data p_delta = convert_list[sp_id]*spline.block<order_num+1,3>(sp_id*(order_num-2),0)
+                            -p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
+            Data lamb_part=p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0);
+
+            energy+=mu/2.0*p_delta.squaredNorm();
+            //energy+=mu/2.0*std::pow(piece_time-t_slack(sp_id),2);
+
+            for(int j=0;j<3;j++)
+            {
+                Eigen::VectorXd x=p_delta.col(j);
+                Eigen::VectorXd lamb=lamb_part.col(j);
+                energy+=lamb.transpose()*x;
+            }
+            //energy+=t_lambda(sp_id)*(piece_time-t_slack(sp_id));
+        }
+
+        return energy;
+    }
+
+    static double spline_time_energy(const Data& spline, const double& piece_time,
+                                         const Data& p_slack, const Eigen::VectorXd& t_slack, 
+                                         const Data& p_lambda, const Eigen::VectorXd& t_lambda) //all piece
+    { 
+        double energy= lambda*bound_energy(spline,piece_time);
+
+        for(int sp_id=0;sp_id<piece_num;sp_id++)
+        {
+            /*
+            Data p_delta = convert_list[sp_id]*spline.block<order_num+1,3>(sp_id*(order_num-2),0)
+                            -p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
+            Data lamb_part=p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0);
+            */
+            //energy+=mu/2.0*p_delta.squaredNorm();
+            energy+=mu/2.0*std::pow(piece_time-t_slack(sp_id),2);
+            /*
+            for(int j=0;j<3;j++)
+            {
+                Eigen::VectorXd x=p_delta.col(j);
+                Eigen::VectorXd lamb=lamb_part.col(j);
+                energy+=lamb.transpose()*x;
+            }
+            */
             energy+=t_lambda(sp_id)*(piece_time-t_slack(sp_id));
         }
 
@@ -91,8 +150,8 @@ class Energy_admm
             energy+=ks/std::pow(t_part,2*der_num-1)*0.5*x.transpose()*M_dynamic*x;
         }
 
-        energy+=kt*t_part;
-        //energy+=kt*t_part*t_part;
+        //energy+=kt*t_part;
+        energy+=kt*std::pow(t_part,1.1);
 
         return energy;
     }
@@ -166,15 +225,14 @@ class Energy_admm
            
             for(int j=0;j<order_num;j++)
             {
-                //Eigen::RowVector3d vel=order_num*(P[j+1]-P[j]);
                 Eigen::RowVector3d vel=order_num*(P.row(j+1)-P.row(j));
-                  //d=vel_limit*piece_time-vel.norm()/weight;
 
-                //d=vel_limit-vel.norm()/(weight*piece_time);
-                d=vel_limit*vel_limit-vel.squaredNorm()/std::pow(weight*piece_time,2);
+                d=vel_limit-vel.norm()/(weight*piece_time);
+                //d=vel_limit*vel_limit-vel.squaredNorm()/std::pow(weight*piece_time,2);
                 if(d<=0)
                     return INFINITY;
-                double vel_margin=2*vel_limit*margin;
+                //double vel_margin=2*vel_limit*margin;
+                double vel_margin=margin;
                 
                 if(d<vel_margin)
                 { 
@@ -202,16 +260,15 @@ class Energy_admm
            
             for(int j=0;j<order_num-1;j++)
             {
-                //Eigen::RowVector3d acc=order_num*(order_num-1)*(P[j+2]-2*P[j+1]+P[j]);
                 Eigen::RowVector3d acc=order_num*(order_num-1)*(P.row(j+2)-2*P.row(j+1)+P.row(j));
-                //d=acc_limit*piece_time*piece_time-acc.norm()/(weight*weight);
                 
-                //d=acc_limit-acc.norm()/(weight*weight*piece_time*piece_time);
-                d=acc_limit*acc_limit-acc.squaredNorm()/std::pow(weight*weight*piece_time*piece_time,2);
+                d=acc_limit-acc.norm()/(weight*weight*piece_time*piece_time);
+                //d=acc_limit*acc_limit-acc.squaredNorm()/std::pow(weight*weight*piece_time*piece_time,2);
                 if(d<=0)
                     return INFINITY;
                                 
-                double acc_margin=2*acc_limit*margin;
+                //double acc_margin=2*acc_limit*margin;
+                double acc_margin=margin;
 
                 if(d<acc_margin)
                 { 

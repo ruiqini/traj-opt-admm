@@ -125,6 +125,15 @@ class Separate
         return false;
       
       c/=c_n;
+      /*
+      if(c_n-offset<=0)
+      {
+        std::cout<<c_n-offset<<" ========================\n";
+        int i;
+        std::cin>>i;
+
+      }
+      */
 
       d=INFINITY;
       for(int i=0;i<3;i++)
@@ -317,6 +326,7 @@ class Separate
         return false;
       
       c/=c_n;
+      
 
       double d0,d1;
       
@@ -328,7 +338,6 @@ class Separate
         if(d0>d_)
           d0=d_;
       }
-
       //d0-=offset;
 
       d1=-INFINITY;

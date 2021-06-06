@@ -183,8 +183,8 @@ int main(int argc, char *argv[])
 
   std::cout<<"time_bvh:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
   
-  vel_limit=2.0;
-  acc_limit=2.0;
+  vel_limit=j["vel_limit"].get<double>();;//2
+  acc_limit=j["acc_limit"].get<double>();;//2
     
   result_file.open ("result/" +mesh_file + "_result_file_admm.txt");
  
@@ -268,6 +268,7 @@ int main(int argc, char *argv[])
          init_time=temp_time;
     }
     
+
     trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
     spline.resize(trajectory_num,3);
 
@@ -383,10 +384,10 @@ int main(int argc, char *argv[])
 
   gnorm=1;
   
-  ks=1e-3;//1e-3
+  ks=1e-8;//1e-3
   kt=1;
   std::cout<<init_time<<"\n";
-  double piece_time=init_time;//20
+  double piece_time=20;//init_time;//20
 
   Conversion<order_num>::convert_matrix();
   

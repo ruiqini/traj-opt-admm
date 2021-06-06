@@ -22,14 +22,7 @@ class Gradient_admm
     typedef Eigen::MatrixXd Data;
     typedef std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > Tree;
     typedef std::tuple< int, std::pair<double,double>, Eigen::MatrixXd >  Node;
-    /*
-    typedef Eigen::Matrix<double,Eigen::Dynamic,1> inner_derivative_t;//3*(order_num+1)
-    typedef Eigen::AutoDiffScalar<inner_derivative_t> inner_scalar_t;
-    typedef Eigen::Matrix<inner_scalar_t,Eigen::Dynamic,1> derivative_t;
-    typedef Eigen::AutoDiffScalar<derivative_t> scalar_t;
-    typedef Eigen::Matrix<scalar_t,Eigen::Dynamic,1> Vec12;
-    typedef Eigen::Matrix<scalar_t,1,3> Vec3;
-    */
+    
 
     static void spline_gradient(const Data& spline, const double& piece_time,
                                 const Data& p_slack, const Eigen::VectorXd& t_slack, 
@@ -57,7 +50,7 @@ class Gradient_admm
         //time_gradient(spline, piece_time, g_t, h_t, partgrad);
         //clock_t time3 = clock();  
 
-        bound_gradient(spline,piece_time, g2,h2, g_t, h_t, partgrad);
+        bound_gradient_2(spline,piece_time, g2,h2, g_t, h_t, partgrad);
         //clock_t time2 = clock();
 
 
@@ -65,11 +58,16 @@ class Gradient_admm
         //std::cout<<"gradtime21:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl;
         //std::cout<<"gradtime32:"<<(time3-time2)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
 
+        //g0=lambda*g1+lambda*g2;
+        //h0=lambda*h1+lambda*h2;
+
         g0=lambda*g1+lambda*g2;
         h0=lambda*h1+lambda*h2;
 
         g_t*=lambda;
         h_t*=lambda;
+
+      
 
         Eigen::Matrix3d I;
         I.setIdentity();
@@ -117,18 +115,20 @@ class Gradient_admm
             h_t+=mu;
         }
 
+
         int n=3*trajectory_num;
         
-        grad.resize(n+1);
+        grad.resize(n+1); grad.setZero();
         grad.head(n)=g0;
         grad(n)=g_t;
 
-        hessian.resize(n+1,n+1);
+        hessian.resize(n+1,n+1); hessian.setZero();
         hessian.block(0,0,n,n)=h0;
 
         hessian.block(0,n,n,1)=lambda*partgrad;
         hessian.block(n,0,1,n)=lambda*partgrad.transpose();
         hessian(n,n)=h_t;
+        
         /*
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
         Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
@@ -141,6 +141,159 @@ class Gradient_admm
         std::cout<<"h2 det:"<<h2.determinant()<<"\n";
         std::cout<<"spline det:"<<hessian.determinant()<<"\n\n";
         */
+    }
+
+    static void spline_position_gradient(const Data& spline, const double& piece_time,
+                                        const Data& p_slack, const Eigen::VectorXd& t_slack, 
+                                        const Data& p_lambda, const Eigen::VectorXd& t_lambda,
+                                        const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                        const std::vector<std::vector<double>>& d_lists,
+                                        Eigen::VectorXd& grad, Eigen::MatrixXd& hessian)//all piece no fix
+    { 
+        //double energy=lambda*plane_barrier_energy(spline,c_lists, d_lists)+ lambda*bound_energy(spline,piece_time);
+        Eigen::VectorXd g0,g1,g2, partgrad;
+        Eigen::MatrixXd h0,h1,h2;
+        double g_t,h_t;
+        /* h = h1+h2 pg
+               pg'   h_t
+        */
+        /*
+           g = g1+g2
+               g_t
+        */
+   
+        plane_barrier_gradient(spline, c_lists, d_lists,g1, h1);
+
+        bound_gradient_2(spline,piece_time, g2,h2, g_t, h_t, partgrad);
+
+
+        g0=lambda*g1+lambda*g2;
+        h0=lambda*h1+lambda*h2;  
+
+        g_t*=lambda;
+        h_t*=lambda;
+
+        Eigen::Matrix3d I;
+        I.setIdentity();
+
+        Eigen::MatrixXd B,M; 
+
+        for(int sp_id=0;sp_id<piece_num;sp_id++)
+        {
+            int init=sp_id*(order_num-2);
+
+            Data p_delta = convert_list[sp_id]*spline.block<order_num+1,3>(init,0)
+                            -p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
+
+            Data lamb_part=p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0);
+            
+            Eigen::MatrixXd x1=convert_list[sp_id].transpose()*p_delta;
+            Eigen::MatrixXd x2=convert_list[sp_id].transpose()*lamb_part;
+
+            M=convert_list[sp_id].transpose()*convert_list[sp_id];
+            B = Eigen::kroneckerProduct(M,I);
+            
+            x1.transposeInPlace();
+            x2.transposeInPlace();
+            
+            Eigen::VectorXd v1(Eigen::Map<Eigen::VectorXd>(x1.data(), 3*(order_num+1)));
+            Eigen::VectorXd v2(Eigen::Map<Eigen::VectorXd>(x2.data(), 3*(order_num+1)));
+            
+            g0.segment<3*(order_num+1)>(3*init)+=mu*v1+v2;
+            
+            h0.block<3*(order_num+1),3*(order_num+1)>(3*init,3*init)+=mu*B;
+
+            g_t+=mu*(piece_time-t_slack(sp_id)) + t_lambda(sp_id);
+            h_t+=mu;
+        }
+
+
+        int n=3*trajectory_num;
+        
+        grad.resize(n); grad.setZero();
+        grad.head(n)=g0;
+        //grad(n)=g_t;
+
+        hessian.resize(n,n); hessian.setZero();
+        hessian.block(0,0,n,n)=h0;
+
+        //hessian.block(0,n,n,1)=lambda*partgrad;
+        //hessian.block(n,0,1,n)=lambda*partgrad.transpose();
+        //hessian(n,n)=h_t;
+    }
+
+        static void spline_time_gradient(const Data& spline, const double& piece_time,
+                                        const Data& p_slack, const Eigen::VectorXd& t_slack, 
+                                        const Data& p_lambda, const Eigen::VectorXd& t_lambda,
+                                        Eigen::VectorXd& grad, Eigen::MatrixXd& hessian)//all piece no fix
+    { 
+        //double energy=lambda*plane_barrier_energy(spline,c_lists, d_lists)+ lambda*bound_energy(spline,piece_time);
+        Eigen::VectorXd g0,g1,g2, partgrad;
+        Eigen::MatrixXd h0,h1,h2;
+        double g_t,h_t;
+        /* h = h1+h2 pg
+               pg'   h_t
+        */
+        /*
+           g = g1+g2
+               g_t
+        */
+   
+
+        bound_gradient_2(spline,piece_time, g2,h2, g_t, h_t, partgrad);
+
+        
+        //g0=lambda*g1+lambda*g2;
+        //h0=lambda*h1+lambda*h2;  
+
+        g_t*=lambda;
+        h_t*=lambda;
+
+        Eigen::Matrix3d I;
+        I.setIdentity();
+
+        Eigen::MatrixXd B,M; 
+
+        for(int sp_id=0;sp_id<piece_num;sp_id++)
+        {
+            /*
+            int init=sp_id*(order_num-2);
+
+            Data p_delta = convert_list[sp_id]*spline.block<order_num+1,3>(init,0)
+                            -p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
+
+            Data lamb_part=p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0);
+            
+            Eigen::MatrixXd x1=convert_list[sp_id].transpose()*p_delta;
+            Eigen::MatrixXd x2=convert_list[sp_id].transpose()*lamb_part;
+
+            M=convert_list[sp_id].transpose()*convert_list[sp_id];
+            B = Eigen::kroneckerProduct(M,I);
+            
+            x1.transposeInPlace();
+            x2.transposeInPlace();
+            
+            Eigen::VectorXd v1(Eigen::Map<Eigen::VectorXd>(x1.data(), 3*(order_num+1)));
+            Eigen::VectorXd v2(Eigen::Map<Eigen::VectorXd>(x2.data(), 3*(order_num+1)));
+            
+            g0.segment<3*(order_num+1)>(3*init)+=mu*v1+v2;
+            
+            h0.block<3*(order_num+1),3*(order_num+1)>(3*init,3*init)+=mu*B;
+            */
+            g_t+=mu*(piece_time-t_slack(sp_id)) + t_lambda(sp_id);
+            h_t+=mu;
+        }
+
+        //std::cout<<"oo\n";
+        //int n=3*trajectory_num;
+        
+        grad.resize(1); 
+        
+        grad(0)=g_t;
+
+        hessian.resize(1,1); 
+       
+        hessian(0,0)=h_t;
     }
 
     static void slack_gradient(const Data& c_spline, const double& piece_time,
@@ -191,11 +344,11 @@ class Gradient_admm
         g_t+=mu*(t_part-piece_time)-t_lambda;
         h_t+=mu;
 
-        grad.resize(n+1);
+        grad.resize(n+1); grad.setZero();
         grad.head(n)=g0;
         grad(n)=g_t;
 
-        hessian.resize(n+1,n+1);
+        hessian.resize(n+1,n+1); hessian.setZero();
         hessian.block(0,0,n,n)=h0;
 
         hessian.block(0,n,n,1)=partgrad;
@@ -244,11 +397,12 @@ class Gradient_admm
         
         
         g_t=-(2*der_num-1)*dynamic_energy/t_part;
-        g_t+=kt;
-        //g_t+=2*kt*t_part;
+        //g_t+=kt;
+        g_t+=kt*1.1*std::pow(t_part,0.1);
 
         h_t=(2*der_num-1)*(2*der_num)*dynamic_energy/(t_part*t_part);  
-        //h_t+=2*kt;
+        
+        h_t+=kt*0.11*std::pow(t_part,-0.9);
 
         partgrad=-(2*der_num-1)*grad/t_part;
 
@@ -525,8 +679,8 @@ class Gradient_admm
         std::cout<<"max_acc:"<<sqrt(max_acc)<<std::endl;
     }
     
-    /*
-    static void bound_gradient(const Data& spline, const double& piece_time,
+    
+    static void bound_gradient_2(const Data& spline, const double& piece_time,
                                Eigen::VectorXd& grad, Eigen::MatrixXd& hessian,
                                double& g_t, double& h_t, 
                                Eigen::VectorXd& partgrad)
@@ -735,7 +889,7 @@ class Gradient_admm
         std::cout<<"max_vel:"<<max_vel<<std::endl;
         std::cout<<"max_acc:"<<max_acc<<std::endl;
     }
-    */
+    
 };
 
 PRJ_END
