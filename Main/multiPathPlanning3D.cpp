@@ -242,11 +242,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  vel_tree=subdivide_tree;
-  acc_tree=subdivide_tree;
-
-
-  
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
@@ -347,7 +342,7 @@ int main(int argc, char *argv[])
     }
     
   }
-  
+   
   const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
   {  
      if(iter<num) 

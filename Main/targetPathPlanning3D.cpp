@@ -227,11 +227,6 @@ int main(int argc, char *argv[])
       subdivide_tree[i*res+k]=std::make_tuple(i,range,basis*convert_list[i]);
     }
   }
-
-  vel_tree=subdivide_tree;
-  acc_tree=subdivide_tree;
-
-
   
   std::cout<<"before bvh init\n";
   BVH bvh;

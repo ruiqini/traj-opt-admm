@@ -8,6 +8,7 @@
 #include "HighOrderCCD/OMPL/OMPL.h"
 
 #include "HighOrderCCD/Optimization/Optimization3D_admm.h"
+#include "HighOrderCCD/Optimization/Optimization3D_am.h"
 
 #include <vector>
 #include <ctime>
@@ -436,11 +437,7 @@ int main(int argc, char *argv[])
       std::pair<double,double> range(a,b);
       subdivide_tree[i*res+k]=std::make_tuple(i,range,basis*convert_list[i]);
     }
-  }
-
-  vel_tree=subdivide_tree;
-  acc_tree=subdivide_tree;
-  
+  }  
   
   //std::cout<<F_<<std::endl;
   
@@ -620,8 +617,10 @@ int main(int argc, char *argv[])
                                             p_slack, t_slack, 
                                             p_lambda, t_lambda,
                                             V, F, bvh);
-           
-                    
+          /*
+          Optimization3D_am::optimization(spline, piece_time, 
+                                          V, F, bvh);
+           */         
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
           std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;

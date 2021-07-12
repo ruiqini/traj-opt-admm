@@ -15,7 +15,7 @@ double epsilon ,
        gnorm, gtime, tnorm,
        mu;
 
-std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree, vel_tree, acc_tree;
+std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree;
 bool automove, step_choose, adaptive_change, optimize_time;
 std::ofstream  result_file, init_file;
 Eigen::MatrixXd M_dynamic;

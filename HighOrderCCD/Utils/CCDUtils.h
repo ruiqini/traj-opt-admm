@@ -31,7 +31,8 @@ extern double epsilon,
               gnorm, gtime, tnorm,
               mu;
 
-extern std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree, vel_tree, acc_tree;
+extern std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree;
+/*change to vector<vector<pair<>,matrix>>>*/
 extern bool automove, step_choose, adaptive_change, optimize_time;
 extern std::ofstream  result_file,  init_file;
 

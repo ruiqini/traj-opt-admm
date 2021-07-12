@@ -110,12 +110,12 @@ class Energy
     {
         double energy=0;
 
-        for(unsigned int tr_id=0;tr_id<vel_tree.size();tr_id++)
+        for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
         
-            int sp_id=std::get<0>(vel_tree[tr_id]);
-            double weight=std::get<1>(vel_tree[tr_id]).second-std::get<1>(vel_tree[tr_id]).first;
-            Eigen::MatrixXd basis=std::get<2>(vel_tree[tr_id]);
+            int sp_id=std::get<0>(subdivide_tree[tr_id]);
+            double weight=std::get<1>(subdivide_tree[tr_id]).second-std::get<1>(subdivide_tree[tr_id]).first;
+            Eigen::MatrixXd basis=std::get<2>(subdivide_tree[tr_id]);
             
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
@@ -150,12 +150,12 @@ class Energy
 
         
 
-        for(unsigned int tr_id=0;tr_id<acc_tree.size();tr_id++)
+        for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
         
-            int sp_id=std::get<0>(acc_tree[tr_id]);
-            double weight=std::get<1>(acc_tree[tr_id]).second-std::get<1>(acc_tree[tr_id]).first;
-            Eigen::MatrixXd basis=std::get<2>(acc_tree[tr_id]);
+            int sp_id=std::get<0>(subdivide_tree[tr_id]);
+            double weight=std::get<1>(subdivide_tree[tr_id]).second-std::get<1>(subdivide_tree[tr_id]).first;
+            Eigen::MatrixXd basis=std::get<2>(subdivide_tree[tr_id]);
             
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
