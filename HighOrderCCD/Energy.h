@@ -13,9 +13,6 @@ class Energy
 {
   public:
     typedef Eigen::MatrixXd Data;
-    typedef std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > Tree;
-    typedef std::tuple< int, std::pair<double,double>, Eigen::MatrixXd >  Node;
-    
 
     static double plane_whole_energy(const Data& spline, const double& piece_time,
                                      const std::vector<std::vector<Eigen::Vector3d>>& c_lists,

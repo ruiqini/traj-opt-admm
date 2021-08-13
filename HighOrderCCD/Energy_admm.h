@@ -9,8 +9,6 @@ class Energy_admm
 {
   public:
     typedef Eigen::MatrixXd Data;
-    typedef std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > Tree;
-    typedef std::tuple< int, std::pair<double,double>, Eigen::MatrixXd >  Node;
     
     // whole energy
     /*ks*dynamic_energy(spline,piece_time)+kt*whole_weight*piece_time+

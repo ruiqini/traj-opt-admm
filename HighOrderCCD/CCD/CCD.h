@@ -14,7 +14,7 @@ class CCD
   public:
     typedef Eigen::MatrixXd Data;
     
-    static bool GJKDCD(Data position, Data _position , double d) //TT
+    static bool GJKDCD(const Data& position, const Data& _position ,const double& d) //TT
     {
 
       struct simplex  s;
@@ -111,7 +111,8 @@ class CCD
       return gjk_distance2 <= d*d;
     }
 
-    static bool GJKCCD(Data position, Data direction, Data _position , double d, double tMin, double tMax)
+    static bool GJKCCD(const Data& position, const Data& direction, const Data& _position, 
+                       const double& d, const double& tMin, const double& tMax)
     {
       Data position0=position+tMin*direction;
       Data position1=position+tMax*direction;
@@ -218,8 +219,9 @@ class CCD
       return gjk_distance2 <= d*d;
     }
 
-    static bool SelfGJKCCD(Data position, Data direction, Data _position, Data _direction , double d, 
-                           double tMin, double tMax, double _tMin, double _tMax)
+    static bool SelfGJKCCD(const Data& position, const Data& direction, 
+                           const Data& _position, const Data& _direction , const double& d, 
+                           const double& tMin, const double& tMax, const double& _tMin, const double& _tMax)
     {
       Data position0=position+tMin*direction;
       Data position1=position+tMax*direction;
@@ -339,7 +341,8 @@ class CCD
       return gjk_distance2 <= d*d;
     }
 
-    static bool KDOPCCD(Data position, Data direction, Data _position,  double d, double tMin, double tMax)
+    static bool KDOPCCD(const Data& position, const Data& direction,const Data& _position,  
+                        const double& d, const double& tMin, const double& tMax)
     {
       Data A(2*(order_num+1),3);
       A<<position+tMin*direction,position+tMax*direction;
@@ -384,15 +387,14 @@ class CCD
 
     }
 
-    static bool KDOPDCD(Data position, Data _position,  double d)
+    static bool KDOPDCD(const Data& position, const Data& _position, const double & d)
     {
-      Data A((order_num+1),3);
-      A<<position;
+      
       
       int dim = kdop_axis.size();
       double level;
 
-      Eigen::MatrixXd l = A * kdop_matrix;
+      Eigen::MatrixXd l = position * kdop_matrix;
 	    Eigen::MatrixXd _l = _position * kdop_matrix;
 	    double *l_data = l.data();
 	    double *_l_data = _l.data();
@@ -429,8 +431,9 @@ class CCD
 
     }
 
-    static bool SelfKDOPCCD(Data position, Data direction, Data _position, Data _direction,  double d, 
-                            double tMin, double tMax,double _tMin, double _tMax)
+    static bool SelfKDOPCCD(const Data& position, const Data& direction, 
+                            const Data& _position, const Data& _direction , const double& d, 
+                            const double& tMin, const double& tMax, const double& _tMin, const double& _tMax)
     {
       Data A(2*(order_num+1),3);
       A<<position+tMin*direction,position+tMax*direction;
@@ -472,7 +475,7 @@ class CCD
 
     }
 
-    static bool SelfKDOPDCD(Data position, Data _position,  double d)
+    static bool SelfKDOPDCD(const Data& position,const Data& _position, const double& d)
     {
       
       int dim = kdop_axis.size();

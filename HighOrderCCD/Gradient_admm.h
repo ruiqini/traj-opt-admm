@@ -9,8 +9,6 @@ class Gradient_admm
 {
   public:
     typedef Eigen::MatrixXd Data;
-    typedef std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > Tree;
-    typedef std::tuple< int, std::pair<double,double>, Eigen::MatrixXd >  Node;
     
     static void global_spline_gradient(const Data& spline, const double& piece_time,
                                         const Data& p_slack, const Eigen::VectorXd& t_slack, 

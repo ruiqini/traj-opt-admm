@@ -26,9 +26,6 @@ public:
  
   typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
 
-  typedef std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > Tree;
-  typedef std::tuple< int, std::pair<double,double>, Eigen::MatrixXd >  Node;
-
 
   static void optimization(const std::vector<Eigen::Vector3d>& target_list,
                            std::vector<Data>& spline_list, std::vector<double>& piece_time_list,

@@ -40,13 +40,9 @@ SEARCH_SOURCE(HighOrderCCD HighOrderCCD)
 add_subdirectory(lib/opengjk)
 include_directories(lib/opengjk/include)
 
-include_directories(
-  /opt/intel/oneapi/mkl/latest/include/
-)
+#include_directories(/opt/intel/oneapi/mkl/latest/include/)
 
-link_directories(
-  /opt/intel/oneapi/mkl/latest/lib/intel64/
- )
+#link_directories(/opt/intel/oneapi/mkl/latest/lib/intel64/)
 
 #LIBRARY
 INCLUDE("${PROJECT_SOURCE_DIR}/cmake/LoadLibs.cmake")
@@ -55,7 +51,7 @@ INCLUDE("${PROJECT_SOURCE_DIR}/cmake/LoadLibs.cmake")
 #BUILD LIBRARY
 ADD_LIBRARY(admmCCD SHARED
     ${sourceHighOrderCCD} ${headerHighOrderCCD})
-TARGET_LINK_LIBRARIES(admmCCD stdc++fs ${ALL_LIBRARIES} ${ALL_STATIC_LIBRARIES} libmkl_rt.so)
+TARGET_LINK_LIBRARIES(admmCCD stdc++fs ${ALL_LIBRARIES} ${ALL_STATIC_LIBRARIES})# libmkl_rt.so
 
 
 

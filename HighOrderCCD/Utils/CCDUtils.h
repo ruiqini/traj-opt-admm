@@ -1,7 +1,7 @@
 #ifndef CCDUTILS_H
 #define CCDUTILS_H
 
-#define EIGEN_USE_MKL_ALL
+//#define EIGEN_USE_MKL_ALL
 
 #include <iostream>
 #include <fstream>
@@ -43,18 +43,20 @@ extern double epsilon,
               gnorm, gtime, tnorm,
               mu;
 
-extern std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd > > subdivide_tree;
+extern std::vector< std::tuple< int, std::pair<double,double>, 
+                    Eigen::Matrix<double,order_num+1,order_num+1> > > subdivide_tree;
+
 /*change to vector<vector<pair<>,matrix>>>*/
 extern bool automove, step_choose, adaptive_change, optimize_time;
 extern std::ofstream  result_file,  init_file;
 
-extern Eigen::MatrixXd M_dynamic;
+extern Eigen::Matrix<double,order_num+1,order_num+1> M_dynamic;
 
 extern std::vector<bool> reach_target;
 
 extern std::vector<double> time_weight;
 extern double whole_weight;
-extern std::vector<Eigen::MatrixXd> convert_list;
+extern std::vector<Eigen::Matrix<double,order_num+1,order_num+1>> convert_list;
 
 extern double kt, ks;// time s
 extern double vel_limit, acc_limit;
