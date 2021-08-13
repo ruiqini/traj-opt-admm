@@ -468,12 +468,19 @@ public:
     Eigen::VectorXd grad, partgrad;
     Eigen::MatrixXd hessian;
     double g_t,h_t;
-
+    
     Gradient_admm::spline_gradient(spline,  piece_time,
                                    p_slack,  t_slack, 
                                    p_lambda,  t_lambda,
                                    c_list, d_list,
                                    grad, hessian);
+    /*
+    Gradient_admm::global_spline_gradient(spline,  piece_time,
+                                          p_slack,  t_slack, 
+                                          p_lambda,  t_lambda,
+                                          c_list, d_list,
+                                          grad, hessian);*/
+
     g_t=grad(3*t_n);
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
@@ -511,6 +518,12 @@ public:
       solver.compute(h0);    
 
     }
+
+    /*
+    SpMat H=h0.sparseView();
+    Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
+    solver.compute(H);
+    */
    
     
     x0 = solver.solve(ng0);

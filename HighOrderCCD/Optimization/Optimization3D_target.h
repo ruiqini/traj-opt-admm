@@ -521,7 +521,13 @@ public:
                                    p_lambda,  t_lambda,
                                    c_list, d_list,
                                    grad, hessian);
-
+    /*                               
+    Gradient_admm::global_spline_gradient(spline,  piece_time,
+                                          p_slack,  t_slack, 
+                                          p_lambda,  t_lambda,
+                                          c_list, d_list,
+                                          grad, hessian);
+    */
     Eigen::RowVector3d vel=1/piece_time*(spline.row(1)-spline.row(0));
 
     for(int i=0;i<3;i++)

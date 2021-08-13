@@ -38,14 +38,14 @@ Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now
         for(int j = 0; j < ctrl_num1D; j++)
             ret(i) += combination[_traj_order][j] * ctrl_now(i * ctrl_num1D + j) * pow(t_now, j) * pow((1 - t_now), (_traj_order - j) ); 
 
-    return ret;  
+    return ret;   
 }
 
 int main(int argc, char *argv[])
 {
   if (argc < 2)
 	{
-		std::cerr << "Syntax: " << argv[0] << " <config file>" << std::endl;
+		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
 		return -1;
   }
 
@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
   viewer.data().line_width = 1.0f;
   viewer.data().point_size = 3.0f;
 
-  const std::string config_file = argv[1];
-  std::ifstream fin("Config File/"+config_file);   
+  std::ifstream fin("Config File/3D.json");   
   json j = json::parse(fin);
 	fin.close();
 
@@ -107,7 +106,7 @@ int main(int argc, char *argv[])
   Eigen::MatrixXd V, BV;
   Eigen::MatrixXi F, BF;
   
-  const std::string mesh_file = argv[2];
+  const std::string mesh_file = argv[1];
   igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
   
   vel_limit=2.0;

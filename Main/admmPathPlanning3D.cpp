@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 2)
 	{
-		std::cerr << "Syntax: " << argv[0] << " <config file>" << std::endl;
+		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
 		return -1;
   }
 
@@ -121,8 +121,7 @@ int main(int argc, char *argv[])
   viewer.data().line_width = 1.0f;
   viewer.data().point_size = 3.0f;
 
-  const std::string config_file = argv[1];
-  std::ifstream fin("Config File/"+config_file);   
+  std::ifstream fin("Config File/3D.json");   
   json j = json::parse(fin);
 	fin.close();
 
@@ -168,7 +167,7 @@ int main(int argc, char *argv[])
   Eigen::MatrixXd V, BV;
   Eigen::MatrixXi F, BF;
   
-  const std::string mesh_file = argv[2];
+  const std::string mesh_file = argv[1];
   igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
 
   std::cout<<"before bvh init\n";
@@ -620,7 +619,7 @@ int main(int argc, char *argv[])
           /*
           Optimization3D_am::optimization(spline, piece_time, 
                                           V, F, bvh);
-           */         
+          */       
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
           std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;

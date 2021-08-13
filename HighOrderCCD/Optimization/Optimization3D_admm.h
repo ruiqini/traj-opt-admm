@@ -362,8 +362,6 @@ public:
 
         p_slack.block<order_num+1,3>(sp_id*(order_num+1),0)=p_part;
         t_slack(sp_id)=t_part;
-
-        
         
     }
     
@@ -409,11 +407,13 @@ public:
                                    c_lists, d_lists,
                                    grad, hessian);
                                    */
+                           
     Gradient_admm::global_spline_gradient(spline,  piece_time,
                                           p_slack,  t_slack, 
                                           p_lambda,  t_lambda,
                                           c_lists, d_lists,
                                           grad, hessian);
+                                          
     g_t=grad(3*t_n);
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);

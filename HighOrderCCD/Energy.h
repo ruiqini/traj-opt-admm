@@ -69,16 +69,7 @@ class Energy
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
         
-            std::vector<Eigen::RowVector3d> P(order_num+1);
-            for(int j=0;j<=order_num;j++)
-            {
-                P[j].setZero();
-                for(int j0=0;j0<=order_num;j0++)
-                {
-                    P[j]+=basis(j,j0)*bz.row(j0);
-                } 
-                
-            }
+            Eigen::MatrixXd P=basis*bz;
 
             double d;
 
@@ -86,7 +77,7 @@ class Energy
             {
                 for(int j=0;j<=order_num;j++)
                 {
-                    d=P[j].dot(c_list[k])+d_list[k];
+                    d=P.row(j).dot(c_list[k])+d_list[k];
 
                     if(d<=0)
                         return INFINITY;
@@ -120,21 +111,13 @@ class Energy
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
 
-            std::vector<Eigen::RowVector3d> P(order_num+1);
-            for(int j=0;j<=order_num;j++)
-            {
-                P[j].setZero();
-                for(int j0=0;j0<=order_num;j0++)
-                {
-                  P[j]+=basis(j,j0)*bz.row(j0);
-                } 
-            }
+            Eigen::MatrixXd P=basis*bz;
                 
             double d;
            
             for(int j=0;j<order_num;j++)
             {
-                Eigen::RowVector3d vel=order_num*(P[j+1]-P[j]);
+                Eigen::RowVector3d vel=order_num*(P.row(j+1)-P.row(j));
                 //d=vel_limit*piece_time-vel.norm()/weight;
                 d=vel_limit-vel.norm()/(weight*time_weight[sp_id]*piece_time);
                 if(d<=0)
@@ -145,36 +128,10 @@ class Energy
                    energy+=-weight*(d-margin)*(d-margin)*log(d/margin); 
                 }
             }
-        }
-
-
         
-
-        for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
-        {
-        
-            int sp_id=std::get<0>(subdivide_tree[tr_id]);
-            double weight=std::get<1>(subdivide_tree[tr_id]).second-std::get<1>(subdivide_tree[tr_id]).first;
-            Eigen::MatrixXd basis=std::get<2>(subdivide_tree[tr_id]);
-            
-            Eigen::MatrixXd bz;
-            bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
-
-            std::vector<Eigen::RowVector3d> P(order_num+1);
-            for(int j=0;j<=order_num;j++)
-            {
-                P[j].setZero();
-                for(int j0=0;j0<=order_num;j0++)
-                {
-                  P[j]+=basis(j,j0)*bz.row(j0);
-                } 
-            }
-                
-            double d;
-           
             for(int j=0;j<order_num-1;j++)
             {
-                Eigen::RowVector3d acc=order_num*(order_num-1)*(P[j+2]-2*P[j+1]+P[j]);
+                Eigen::RowVector3d acc=order_num*(order_num-1)*(P.row(j+2)-2*P.row(j+1)+P.row(j));
                 //d=acc_limit*piece_time*piece_time-acc.norm()/(weight*weight);
                 d=acc_limit-acc.norm()/(weight*weight*time_weight[sp_id]*time_weight[sp_id]*piece_time*piece_time);
                 if(d<=0)
