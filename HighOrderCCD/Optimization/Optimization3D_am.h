@@ -235,21 +235,6 @@ public:
     
     t_direction=x0((t_n-4)*3);
    
-    /*
-    SpMat H=h.sparseView();
-    Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
-    solver.compute(H);
-
-    SpMat I=H; I.setIdentity();
-    while(solver.info()!=Eigen::Success)
-    {
-      H=H+I;
-      solver.compute(H);
-    }
-    x = solver.solve(ng);
-
-    wolfe=x.dot(ng);
-    */
 
     Eigen::MatrixXd d(Eigen::Map<Eigen::MatrixXd>(x.data(), 3,t_n-4));
 
@@ -259,12 +244,6 @@ public:
    
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
-
-    
-    //direction.row(0).setZero();
-    //direction.row(t_n-1).setZero();
-    //direction.row(1).setZero();
-    //direction.row(t_n-2).setZero();
     
     std::cout<<"gn:"<<ng0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
@@ -508,7 +487,6 @@ public:
 
         hessian.block(0,num,num,1)+=-(2*der_num-1)*g/piece_time;
         hessian.block(num,0,1,num)+=-(2*der_num-1)*g.transpose()/piece_time;
-
 
   }
 
