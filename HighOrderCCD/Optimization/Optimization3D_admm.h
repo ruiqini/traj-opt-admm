@@ -62,16 +62,10 @@ public:
       
       clock_t time1 = clock();     
       
-      std::cout<<"\nupdate slack\n";
-      update_slack(spline,  piece_time,
-                    p_slack, t_slack,
-                    p_lambda,  t_lambda);
-
-      std::cout<<"\nupdate lambda\n";
-      update_lambda(spline,  piece_time,
-                    p_slack, t_slack,
-                    p_lambda,  t_lambda);
-      
+      std::cout<<"\nupdate slack&lambda\n";
+      update_slack_lambda(spline,  piece_time,
+                          p_slack, t_slack,
+                          p_lambda,  t_lambda);
 
       std::cout<<"piece_time:"<<piece_time<<std::endl;
 
@@ -180,9 +174,9 @@ public:
 
   }
 
-  static void update_slack(const Data& spline, const double& piece_time,
-                           Data& p_slack,  Eigen::VectorXd& t_slack,
-                           const Data& p_lambda, const Eigen::VectorXd& t_lambda)
+  static void update_slack_lambda(const Data& spline, const double& piece_time,
+                                  Data& p_slack,  Eigen::VectorXd& t_slack,
+                                   Data& p_lambda,  Eigen::VectorXd& t_lambda)
   {
 
 
@@ -337,31 +331,12 @@ public:
 
         p_slack.block<order_num+1,3>(sp_id*(order_num+1),0)=p_part;
         t_slack(sp_id)=t_part;
-        
-    }
-    
-    
-  }
-
-  static void update_lambda(const Data& spline, const double& piece_time,
-                            const Data& p_slack, const Eigen::VectorXd& t_slack,
-                            Data& p_lambda,  Eigen::VectorXd& t_lambda)
-  {
-    for(int sp_id=0;sp_id<piece_num;sp_id++)
-    {
-        int init=sp_id*(order_num-2);
-
-        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
-        Data p_part = p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
 
         p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0)+=mu*(c_spline-p_part);
 
-        double t_part=t_slack(sp_id);
-
         t_lambda(sp_id)+=mu*(piece_time-t_part);
-
+        
     }
-    
   }
 
   static int spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,

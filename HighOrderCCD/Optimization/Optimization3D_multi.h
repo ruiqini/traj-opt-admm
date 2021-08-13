@@ -100,19 +100,11 @@ public:
       for(int i=0;i<uav_num;i++)
       {
 
-        update_slack(spline_list[i],  piece_time_list[i],
-                      p_slack_list[i], t_slack_list[i],
-                      p_lambda_list[i],  t_lambda_list[i]);
+        update_slack_lambda(spline_list[i],  piece_time_list[i],
+                            p_slack_list[i], t_slack_list[i],
+                            p_lambda_list[i],  t_lambda_list[i]);
       }
-
-      for(int i=0;i<uav_num;i++)
-      {
-        update_lambda(spline_list[i],  piece_time_list[i],
-                      p_slack_list[i], t_slack_list[i],
-                      p_lambda_list[i],  t_lambda_list[i]);
-        
-      }
-
+      
       for(int i=0;i<uav_num;i++)
       {
         std::cout<<"piece_time:"<<piece_time_list[i]<<std::endl;
@@ -276,9 +268,9 @@ public:
 
   }
 
-  static void update_slack(const Data& spline, const double& piece_time,
-                           Data& p_slack,  Eigen::VectorXd& t_slack,
-                           const Data& p_lambda, const Eigen::VectorXd& t_lambda)
+  static void update_slack_lambda(const Data& spline, const double& piece_time,
+                                  Data& p_slack,  Eigen::VectorXd& t_slack,
+                                  Data& p_lambda,  Eigen::VectorXd& t_lambda)
   {
 
 
@@ -430,30 +422,13 @@ public:
 
         p_slack.block<order_num+1,3>(sp_id*(order_num+1),0)=p_part;
         t_slack(sp_id)=t_part;
-        
-    }
-    
-    
-  }
-
-  static void update_lambda(const Data& spline, const double& piece_time,
-                            const Data& p_slack, const Eigen::VectorXd& t_slack,
-                            Data& p_lambda,  Eigen::VectorXd& t_lambda)
-  {
-    for(int sp_id=0;sp_id<piece_num;sp_id++)
-    {
-        int init=sp_id*(order_num-2);
-
-        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
-        Data p_part = p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
 
         p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0)+=mu*(c_spline-p_part);
 
-        double t_part=t_slack(sp_id);
-
         t_lambda(sp_id)+=mu*(piece_time-t_part);
-
+        
     }
+    
     
   }
 
@@ -468,18 +443,18 @@ public:
     Eigen::VectorXd grad, partgrad;
     Eigen::MatrixXd hessian;
     double g_t,h_t;
-    
+    /*
     Gradient_admm::spline_gradient(spline,  piece_time,
                                    p_slack,  t_slack, 
                                    p_lambda,  t_lambda,
                                    c_list, d_list,
                                    grad, hessian);
-    /*
+    */
     Gradient_admm::global_spline_gradient(spline,  piece_time,
                                           p_slack,  t_slack, 
                                           p_lambda,  t_lambda,
                                           c_list, d_list,
-                                          grad, hessian);*/
+                                          grad, hessian);
 
     g_t=grad(3*t_n);
     h_t=hessian(3*t_n,3*t_n);
@@ -533,21 +508,7 @@ public:
     x=x0.head((t_n-4)*3);
     
     t_direction=x0((t_n-4)*3);
-    /*
-    SpMat H=h.sparseView();
-    Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
-    solver.compute(H);
-
-    SpMat I=H; I.setIdentity();
-    while(solver.info()!=Eigen::Success)
-    {
-      H=H+I;
-      solver.compute(H);
-    }
-    x = solver.solve(ng);
-
-    wolfe=x.dot(ng);
-    */
+    
 
     Eigen::MatrixXd d(Eigen::Map<Eigen::MatrixXd>(x.data(), 3,t_n-4));
 
@@ -557,12 +518,6 @@ public:
    
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
-
-    
-    //direction.row(0).setZero();
-    //direction.row(t_n-1).setZero();
-    //direction.row(1).setZero();
-    //direction.row(t_n-2).setZero();
     
     std::cout<<"gn:"<<ng0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;

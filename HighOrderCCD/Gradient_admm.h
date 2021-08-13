@@ -262,7 +262,7 @@ class Gradient_admm
 
         //Eigen::VectorXd auto_grad=grad;
         //Eigen::MatrixXd auto_hessian=hessian;
-        double dmin=margin;
+        //double dmin=margin;
 
         Eigen::VectorXd g;
         Eigen::MatrixXd h;
@@ -308,8 +308,8 @@ class Gradient_admm
         partgrad.resize(num);
         partgrad.setZero();
     
-        double max_vel=0;
-        double max_acc=0;
+        //double max_vel=0;
+        //double max_acc=0;
 
         Eigen::VectorXd g; Eigen::MatrixXd h;
         double local_g_t,  local_h_t;
