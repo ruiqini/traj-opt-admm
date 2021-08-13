@@ -365,13 +365,19 @@ class CCD
       
       int dim = kdop_axis.size();
       double level;
+
+      Eigen::MatrixXd l = A * kdop_matrix;
+	    Eigen::MatrixXd _l = _position * kdop_matrix;
+	    double *l_data = l.data();
+	    double *_l_data = _l.data();
+
       for(int k=0;k<dim;k++)
       {
         double upperA=-INFINITY;
         double lowerA=INFINITY;
         for(int i=0;i<2*(order_num+1);i++)
         {
-          level = kdop_axis[k].dot(A.row(i));
+          level = l_data[k*2*(order_num + 1) + i];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -382,7 +388,52 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<3;i++)
         {
-          level = kdop_axis[k].dot(_position.row(i));
+          level =  _l_data[k*3 + i];//kdop_axis[k].dot(_position.row(i));
+          if(level<lowerB)
+            lowerB=level;
+          if(level>upperB)
+            upperB=level;
+        }
+        if(upperB<lowerA-d || upperA<lowerB-d)
+          return false;
+      }
+      return true;
+      
+      //return KDOPConvexCollision<double,3>::hasCollision(A,_position,d);
+
+    }
+
+    static bool KDOPDCD(Data position, Data _position,  double d)
+    {
+      Data A((order_num+1),3);
+      A<<position;
+      
+      int dim = kdop_axis.size();
+      double level;
+
+      Eigen::MatrixXd l = A * kdop_matrix;
+	    Eigen::MatrixXd _l = _position * kdop_matrix;
+	    double *l_data = l.data();
+	    double *_l_data = _l.data();
+
+      for(int k=0;k<dim;k++)
+      {
+        double upperA = -INFINITY;
+        double lowerA = INFINITY;
+        for(int i=0;i<(order_num+1);i++)
+        {
+          level =  l_data[k*(order_num + 1) + i];//kdop_axis[k].dot(A.row(i));
+          if(level<lowerA)
+            lowerA=level;
+          if(level>upperA)
+            upperA=level;
+        }
+
+        double upperB = -INFINITY;
+        double lowerB = INFINITY;
+        for(int i=0;i<3;i++)
+        {
+          level = _l_data[k*3 + i];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
@@ -426,45 +477,6 @@ class CCD
         for(int i=0;i<2*(order_num+1);i++)
         {
           level = kdop_axis[k].dot(B.row(i));
-          if(level<lowerB)
-            lowerB=level;
-          if(level>upperB)
-            upperB=level;
-        }
-        if(upperB<lowerA-d || upperA<lowerB-d)
-          return false;
-      }
-      return true;
-      
-      //return KDOPConvexCollision<double,3>::hasCollision(A,_position,d);
-
-    }
-
-    static bool KDOPDCD(Data position, Data _position,  double d)
-    {
-      Data A((order_num+1),3);
-      A<<position;
-      
-      int dim = kdop_axis.size();
-      double level;
-      for(int k=0;k<dim;k++)
-      {
-        double upperA=-INFINITY;
-        double lowerA=INFINITY;
-        for(int i=0;i<(order_num+1);i++)
-        {
-          level = kdop_axis[k].dot(A.row(i));
-          if(level<lowerA)
-            lowerA=level;
-          if(level>upperA)
-            upperA=level;
-        }
-
-        double upperB=-INFINITY;
-        double lowerB=INFINITY;
-        for(int i=0;i<3;i++)
-        {
-          level = kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)

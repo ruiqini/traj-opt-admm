@@ -364,26 +364,28 @@ class Gradient_admm
             double d;
             
             Eigen::Matrix3d I; I.setIdentity();
-            for(unsigned int k=0;k<c_list.size();k++)
+            
+            for(int j=0;j<=order_num;j++)
             {
-                for(int j=0;j<=order_num;j++)
+                Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j),I);
+                A.transposeInPlace();
+                for(unsigned int k=0;k<c_list.size();k++)
                 {
                     //d=P[j].dot(c_list[k])+d_list[k];
                     d=P.row(j).dot(c_list[k])+d_list[k];
                     
                     if(d<margin)
                     { 
-                       Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j),I);
                         //std::cout<<A<<"\n";
-                       Eigen::MatrixXd d_x=c_list[k].transpose()*A;
+                       Eigen::MatrixXd d_x=A * c_list[k];
 
                        double e1=-weight*(2*(d-margin)*log(d/margin)+(d-margin)*(d-margin)/d);
 
-                       grad += e1*d_x.transpose();
+                       grad += e1*d_x;
 
                        double e2=-weight*(2*log(d/margin)+4*(d-margin)/d-(d-margin)*(d-margin)/(d*d));
                                         
-                       hessian += e2*d_x.transpose()*d_x;
+                       hessian += e2*d_x*d_x.transpose();
 
                     }
                 }
@@ -431,8 +433,10 @@ class Gradient_admm
             {
                 //Eigen::RowVector3d P_=P[j+1]-P[j];
                 Eigen::RowVector3d P_=P.row(j+1)-P.row(j);
-                Eigen::RowVector3d vel=order_num*P_;
-                double v=vel.norm()/(weight);
+                //Eigen::RowVector3d vel=order_num*P_;
+                double d_=P_.norm();
+
+                double v=order_num*d_/(weight);
                 //d=vel_limit*piece_time-vel.norm()/weight;
                 d=vel_limit-v/piece_time;
 
@@ -458,7 +462,6 @@ class Gradient_admm
                     Eigen::RowVector3d d_p;
                     Eigen::Matrix3d h_p;
 
-                    double d_=P_.norm();
                     
                     d_p=-order_num/(weight*piece_time)*P_/d_;
         
@@ -481,8 +484,9 @@ class Gradient_admm
             {
                 //Eigen::RowVector3d P_=P[j+2]-2*P[j+1]+P[j];
                 Eigen::RowVector3d P_=P.row(j+2)-2*P.row(j+1)+P.row(j);
-                Eigen::RowVector3d acc=order_num*(order_num-1)*P_;
-                double a=acc.norm()/(weight*weight);
+                //Eigen::RowVector3d acc=order_num*(order_num-1)*P_;
+                double d_ = P_.norm();
+                double a = order_num*(order_num-1)*d_/(weight*weight);
                 
                 //d=acc_limit*piece_time*piece_time-acc.norm()/(weight*weight);
                 d=acc_limit-a/(piece_time*piece_time);
@@ -509,8 +513,6 @@ class Gradient_admm
                     //std::cout<<A<<"\n";
                     Eigen::RowVector3d d_p;
                     Eigen::Matrix3d h_p;
-
-                    double d_=P_.norm();
                     
                     d_p=-order_num*(order_num-1)/std::pow(weight*piece_time,2)*P_/d_;
         

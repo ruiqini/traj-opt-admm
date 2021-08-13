@@ -47,6 +47,9 @@ extern std::vector<Eigen::MatrixXd> convert_list;
 extern double kt, ks;// time s
 extern double vel_limit, acc_limit;
 
+extern Eigen::MatrixXd aabb_matrix;
+extern Eigen::MatrixXd kdop_matrix;
+
 extern std::vector<Eigen::Vector3d> axis;//13+3*4
 extern std::vector<Eigen::Vector3d> aabb_axis;
 extern std::vector<Eigen::Vector3d> kdop_axis;

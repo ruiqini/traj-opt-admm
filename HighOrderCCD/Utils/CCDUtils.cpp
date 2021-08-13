@@ -29,6 +29,9 @@ std::vector<Eigen::MatrixXd> convert_list;
 double piece_time, kt, ks;
 double vel_limit, acc_limit;
 
+Eigen::MatrixXd aabb_matrix;
+Eigen::MatrixXd kdop_matrix;
+
 std::vector<Eigen::Vector3d> aabb_axis={
                                           Eigen::Vector3d( 1, 0, 0),
                                           Eigen::Vector3d( 0, 1, 0),

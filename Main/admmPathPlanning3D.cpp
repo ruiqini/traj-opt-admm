@@ -158,9 +158,18 @@ int main(int argc, char *argv[])
   
   
   int dim = kdop_axis.size();
+  
+  kdop_matrix.resize(3, dim);
   for(int k=0;k<dim;k++)
   {
     kdop_axis[k].normalize();
+    kdop_matrix.col(k) = kdop_axis[k];
+  }
+
+  aabb_matrix.resize(3, 3);
+  for(int k=0;k<3;k++)
+  {
+    aabb_matrix.col(k) = aabb_axis[k];
   }
   //lambda/=epsilon;
 

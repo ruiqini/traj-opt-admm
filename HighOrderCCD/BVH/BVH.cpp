@@ -140,12 +140,13 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
 
         int sp_id=std::get<0>(subdivide_tree[i]);
         Eigen::MatrixXd basis=std::get<2>(subdivide_tree[i]);
-        std::vector<Eigen::RowVector3d> P(order_num+1);
         
         Eigen::MatrixXd bz;
         bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
+        Eigen::MatrixXd P=basis*bz;
 
-        
+        Eigen::MatrixXd l = P * aabb_matrix;
+	      double *l_data = l.data();
         
         for(int k=0;k<dim;k++)
         {
@@ -156,15 +157,9 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
         for(int j=0;j<=order_num;j++)
         {
 
-            P[j].setZero();
-            for(int j0=0;j0<=order_num;j0++)
-            {
-              P[j]+=basis(j,j0)*bz.row(j0);
-            } 
-
             for(int k=0;k<dim;k++)
             {
-              double level = aabb_axis[k].dot(P[j]);
+              double level = l_data[k*(order_num + 1) + j];//aabb_axis[k].dot(P[j]);
               if(level<lowerBound[k])
                 lowerBound[k]=level;
               if(level>upperBound[k])
@@ -192,13 +187,20 @@ void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<st
         int sp_id=std::get<0>(subdivide_tree[i]);
         Eigen::MatrixXd basis=std::get<2>(subdivide_tree[i]);
         
-        std::vector<Eigen::RowVector3d> P(order_num+1),D(order_num+1);
+        //std::vector<Eigen::RowVector3d> P(order_num+1),D(order_num+1);
         
         Eigen::MatrixXd bz, bz_d;
         bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
         bz_d=direction.block<order_num+1,3>(sp_id*(order_num-2),0);
-       
         
+        Eigen::MatrixXd P = basis*bz;
+        Eigen::MatrixXd PD = basis*(bz+bz_d);
+        
+        Eigen::MatrixXd l = P * aabb_matrix;
+        Eigen::MatrixXd _l = PD * aabb_matrix;
+	      
+        double *l_data = l.data();
+        double *_l_data = _l.data();
         
         for(int k=0;k<dim;k++)
         {
@@ -207,22 +209,16 @@ void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<st
         }
         for(int j=0;j<=order_num;j++)
         {   
-            P[j].setZero();
-            D[j].setZero();
-            for(int j0=0;j0<=order_num;j0++)
-            {
-              P[j]+=basis(j,j0)*bz.row(j0);
-              D[j]+=basis(j,j0)*bz_d.row(j0);
-            } 
+      
             for(int k=0;k<dim;k++)
             {
-              double level = aabb_axis[k].dot(P[j]);
+              double level = l_data[k*(order_num + 1) + j];//aabb_axis[k].dot(P[j]);
               if(level<lowerBound[k])
                 lowerBound[k]=level;
               if(level>upperBound[k])
                 upperBound[k]=level;
 
-              level = aabb_axis[k].dot(P[j]+D[j]);
+              level = _l_data[k*(order_num + 1) + j];//aabb_axis[k].dot(P[j]+D[j]);
               if(level<lowerBound[k])
                 lowerBound[k]=level;
               if(level>upperBound[k])
@@ -241,7 +237,7 @@ void BVH::SelfDCDCollision(const std::vector<Data>& P, std::vector<id_pair>& col
     aabb::Tree self_tree;
     unsigned int n_tr=P.size();
     int dim = aabb_axis.size();
-    self_tree=aabb::Tree(dim, 0.0, n_tr,true);
+    self_tree = aabb::Tree(dim, 0.0, n_tr, true);
  
     //std::cout << n_tr<<"\nInserting tr particles into AABB tree ...\n";
     for (unsigned int i=0;i<n_tr;i++)
