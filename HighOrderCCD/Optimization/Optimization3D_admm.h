@@ -264,32 +264,7 @@ public:
           Eigen::MatrixXd I=h0; I.setIdentity();
           
           solver.compute(h0);
-          /*
-          if(solver.info() == Eigen::NumericalIssue)//50
-          {
-            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
-            Eigen::VectorXd eigenvalue=eigensolver.eigenvalues();
-            Eigen::VectorXd inv_eigenvalue=eigenvalue;
-            for(int k=0;k<eigenvalue.size();k++)
-            {
-              if(eigenvalue(k)<0)
-              {
-                eigenvalue(k)=1e-6;
-                
-              }
-              inv_eigenvalue(k)=1.0/eigenvalue(k);
-
-            }
-            
-            //solver.compute(h0);    
-            Eigen::MatrixXd Q = eigensolver.eigenvectors();
-            x0=Q*inv_eigenvalue.asDiagonal()*Q.transpose()*ng0;
-          }
-          else
-          {
-            x0 = solver.solve(ng0);
-          }
-          */
+          
           if(solver.info() == Eigen::NumericalIssue)//50
           {
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(h0);
@@ -474,22 +449,6 @@ public:
     x=x0.head((t_n-4)*3);
     
     t_direction=x0((t_n-4)*3);
-   
-    /*
-    SpMat H=h.sparseView();
-    Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
-    solver.compute(H);
-
-    SpMat I=H; I.setIdentity();
-    while(solver.info()!=Eigen::Success)
-    {
-      H=H+I;
-      solver.compute(H);
-    }
-    x = solver.solve(ng);
-
-    wolfe=x.dot(ng);
-    */
 
     Eigen::MatrixXd d(Eigen::Map<Eigen::MatrixXd>(x.data(), 3,t_n-4));
 
@@ -499,12 +458,6 @@ public:
    
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
-
-    
-    //direction.row(0).setZero();
-    //direction.row(t_n-1).setZero();
-    //direction.row(1).setZero();
-    //direction.row(t_n-2).setZero();
     
     std::cout<<"gn:"<<ng0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
@@ -526,15 +479,10 @@ public:
     clock_t time0 = clock();
 
     double step=Step::position_step(spline, direction,V,F, bvh);
-    //double step=Step::plane_step(spline, direction,c_lists, d_lists);
-    //double step=Step::mix_step(spline, direction,V,F, bvh,c_lists, d_lists);
-    
+
     clock_t time1 = clock();
 
     std::cout<<"\ntime ccd:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
-    //double time_step=Step::time_step(spline, direction, bvh);
-    //if(time_step<step)
-      //step=time_step;
     
     std::cout<<"highcdd:"<<step<<std::endl<<std::endl;
     if(piece_time+step*t_direction<=0)
