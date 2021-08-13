@@ -3,13 +3,6 @@
 
 #include "Utils/CCDUtils.h"
 
-//#include "HighOrderCCD/BVH/BVH.h"
-//#include "HighOrderCCD/CCD/CCD.h"
-//#include "HighOrderCCD/Distance.h"
-//#include "HighOrderCCD/Distance_der.h"
-
-#include <vector>
-
 PRJ_BEGIN
 
 class Energy_admm

@@ -3,17 +3,6 @@
 
 #include "Utils/CCDUtils.h"
 
-//#include "HighOrderCCD/BVH/BVH.h"
-//#include "HighOrderCCD/CCD/CCD.h"
-//#include "HighOrderCCD/Distance.h"
-//#include "HighOrderCCD/Distance_der.h"
-
-#include <vector>
-
-//#include <Eigen/SparseCholesky>
-//#include <unsupported/Eigen/AutoDiff>
-#include <unsupported/Eigen/KroneckerProduct>
-
 PRJ_BEGIN
 
 class Gradient_admm

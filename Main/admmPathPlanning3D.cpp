@@ -10,14 +10,7 @@
 #include "HighOrderCCD/Optimization/Optimization3D_admm.h"
 #include "HighOrderCCD/Optimization/Optimization3D_am.h"
 
-#include <vector>
-#include <ctime>
-
-
-
 #include "lib/nlohmann/json.hpp"    // https://github.com/nlohmann/json/tree/develop/single_include/nlohmann/json.hpp
-#include <fstream>              // ifstream, ofstream
-#include <unistd.h>
 
 USE_PRJ_NAMESPACE
 

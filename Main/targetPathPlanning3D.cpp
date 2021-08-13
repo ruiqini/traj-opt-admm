@@ -3,26 +3,10 @@
 #include <igl/read_triangle_mesh.h>
 
 #include "HighOrderCCD/Utils/CCDUtils.h"
-/*
-#include "HighOrderCCD/Element.h"
-#include "HighOrderCCD/Subdivide.h"
-#include "HighOrderCCD/ElementCD.h"
-*/
-//#include "HighOrderCCD/Optimization/Optimization3D.h"
-//#include "HighOrderCCD/Optimization/Optimization3D_time.h"
-
-//#include "HighOrderCCD/Optimization/Optimization3D_point.h"
 
 #include "HighOrderCCD/Optimization/Optimization3D_target.h"
 
-#include <vector>
-#include <ctime>
-
-
-
 #include "lib/nlohmann/json.hpp"    // https://github.com/nlohmann/json/tree/develop/single_include/nlohmann/json.hpp
-#include <fstream>              // ifstream, ofstream
-#include <unistd.h>
 
 USE_PRJ_NAMESPACE
 

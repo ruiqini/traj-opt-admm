@@ -6,7 +6,6 @@
 #include "HighOrderCCD/BVH/BVH.h"
 #include "HighOrderCCD/CCD/CCD.h"
 
-#include <vector>
 
 PRJ_BEGIN
 

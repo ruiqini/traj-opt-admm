@@ -1,13 +1,25 @@
 #ifndef CCDUTILS_H
 #define CCDUTILS_H
 
+#define EIGEN_USE_MKL_ALL
+
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
 #include <stdint.h>
+
+#include <vector>
+#include <stdio.h>
+#include <ctime>
+#include <stack>
+#include <algorithm>
+
 #include <Eigen/Eigen>
-//#include "Rational.h"
-//#include "Interval.h"
+#include <Eigen/Sparse>
+#include <unsupported/Eigen/KroneckerProduct>
+#include <Eigen/SparseCholesky>
+
+
 #define PRJ_NAME HighOrderCCD
 #define USE_PRJ_NAMESPACE using namespace PRJ_NAME;
 #define PRJ_BEGIN namespace PRJ_NAME {

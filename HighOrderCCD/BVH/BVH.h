@@ -2,10 +2,7 @@
 #define BVH_H
 
 #include "HighOrderCCD/Utils/CCDUtils.h"
-//#include "HighOrderCCD/Element.h"
-//#include "HighOrderCCD/Subdivide.h"
-//#include "HighOrderCCD/ElementCD.h"
-//#include "HighOrderCCD/Distance.h"
+
 #include "src/AABB.h"
 
 

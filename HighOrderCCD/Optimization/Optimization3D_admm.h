@@ -16,12 +16,6 @@
 #include "HighOrderCCD/Separate.h"
 
 
-
-#include <vector>
-#include <ctime>
-#include <Eigen/SparseCholesky>
-
-
 PRJ_BEGIN
 
 class Optimization3D_admm 

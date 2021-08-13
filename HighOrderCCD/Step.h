@@ -5,7 +5,6 @@
 
 #include "BVH/BVH.h"
 #include "CCD/CCD.h"
-#include <vector>
 
 
 PRJ_BEGIN

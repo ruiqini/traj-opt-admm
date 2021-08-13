@@ -2,20 +2,7 @@
 #define SEPARATE_H
 
 #include "Utils/CCDUtils.h"
-#include <stdio.h>
-#include <Eigen/Sparse>
-//#include "QPwarper.h"
-/*
-// computes the distance between two cubes in R^3 using double
-// as input type and some internal EXACT floating point type
-#include <CGAL/Polytope_distance_d.h>
-#include <CGAL/Polytope_distance_d_traits_3.h>
-#include <CGAL/Homogeneous.h>
-#include <iostream>
-#include <cassert>
-#include <CGAL/Gmpzf.h>
-#include <CGAL/MP_Float.h>
-*/
+
 extern "C" {
 #include <openGJK/openGJK.h>
 }
