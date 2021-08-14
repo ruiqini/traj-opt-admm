@@ -37,7 +37,7 @@ class CCD
       nvrtx1 = order_num+1;
       nvrtx2 = 3;
       
-      const double *position_data=position.data();  
+      const double *A_data=position.data();  
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<nvrtx1; i++)
       {
@@ -45,11 +45,11 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position_data[j*nvrtx1+i];//position(i,j);
+          vrtx1[i][j] = A_data[j*nvrtx1+i];//position(i,j);
         }
       }
 
-      const double *_position_data=_position.data();    
+      const double *B_data=_position.data();    
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -57,7 +57,7 @@ class CCD
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position_data[j*nvrtx2+i];//_position(i,j);
+          vrtx2[i][j] = B_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         
@@ -136,7 +136,7 @@ class CCD
       nvrtx1 = 2*(order_num+1);
       nvrtx2 = 3;
 
-      const double *position_data=position0.data(); 
+      const double *A_data=position0.data(); 
 
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<order_num+1; i++)
@@ -145,22 +145,22 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position_data[j*(order_num+1)+i];//position0(i,j);
+          vrtx1[i][j] = A_data[j*(order_num+1)+i];//position0(i,j);
         }
       }
       
-      position_data=position1.data();
+      A_data=position1.data();
       for (int i=0; i<order_num+1; i++)
       {
         vrtx1[i+order_num+1] = (double *)malloc(3 * sizeof(double));
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i+order_num+1][j] = position_data[j*(order_num+1)+i];//position1(i,j);
+          vrtx1[i+order_num+1][j] = A_data[j*(order_num+1)+i];//position1(i,j);
         }
       }
         
-      const double *_position_data=_position.data();     
+      const double *B_data=_position.data();     
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -168,7 +168,7 @@ class CCD
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position_data[j*nvrtx2+i];//_position(i,j);
+          vrtx2[i][j] = B_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         
@@ -248,9 +248,10 @@ class CCD
       
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
-      nvrtx1 = 2*position.rows();
-      nvrtx2 = 2*_position.rows();
-
+      nvrtx1 = 2*(order_num+1);
+      nvrtx2 = 2*(order_num+1);
+      
+      const double *A_data=position0.data();
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<order_num+1; i++)
       {
@@ -258,21 +259,22 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position0(i,j);
+          vrtx1[i][j] = A_data[j*(order_num+1)+i];//position0(i,j);
         }
       }
-
+      
+      A_data=position0.data();
       for (int i=0; i<order_num+1; i++)
       {
         vrtx1[i+order_num+1] = (double *)malloc(3 * sizeof(double));
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i+order_num+1][j] = position1(i,j);
+          vrtx1[i+order_num+1][j] = A_data[j*(order_num+1)+i];//position1(i,j);
         }
       }
         
-        
+      const double *B_data=_position0.data();
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<order_num+1; i++)
       {
@@ -280,17 +282,18 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position0(i,j);
+          vrtx2[i][j] = B_data[j*(order_num+1)+i];//_position0(i,j);
         }
       }
-
+      
+      B_data=_position1.data();
       for (int i=0; i<order_num+1; i++)
       {
         vrtx2[i+order_num+1] = (double *)malloc(3 * sizeof(double));
         
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i+order_num+1][j] = _position1(i,j);
+          vrtx2[i+order_num+1][j] = B_data[j*(order_num+1)+i];//_position1(i,j);
         }
       }
         
@@ -347,24 +350,25 @@ class CCD
     {
       //Data A((order_num+1),3);
       //A<<position;
-      const double *position_data=position.data();
-      const double *_position_data=_position.data();
+      const double *A_data=position.data();
+      const double *B_data=_position.data();
       double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
       double x,y,z;
       for(int k=0;k<dim;k++)
       {
-        double upperA=-INFINITY;
-        double lowerA=INFINITY;
         x=kdop_data[3*k];//kdop_axis[k](0);
         y=kdop_data[3*k+1];//kdop_axis[k](1);
         z=kdop_data[3*k+2];//kdop_axis[k](2);
+
+        double upperA=-INFINITY;
+        double lowerA=INFINITY;
         for(int i=0;i<(order_num+1);i++)
         {
-          level = x*position_data[i] +
-                  y*position_data[i+(order_num+1)]+
-                  z*position_data[i+2*(order_num+1)];//kdop_axis[k].dot(A.row(i));
+          level = x*A_data[i] +
+                  y*A_data[i+(order_num+1)]+
+                  z*A_data[i+2*(order_num+1)];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -375,9 +379,9 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<3;i++)
         {
-          level = x*_position_data[i] +
-                  y*_position_data[i+3]+
-                  z*_position_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+          level = x*B_data[i] +
+                  y*B_data[i+3]+
+                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
@@ -399,18 +403,19 @@ class CCD
       Data A(2*(order_num+1),3);
       A<<position+tMin*direction,position+tMax*direction;
       double *A_data=A.data();
-      const double *_position_data=_position.data();
+      const double *B_data=_position.data();
       double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
       double x,y,z;
       for(int k=0;k<dim;k++)
       {
-        double upperA=-INFINITY;
-        double lowerA=INFINITY;
         x=kdop_data[3*k];//kdop_axis[k](0);
         y=kdop_data[3*k+1];//kdop_axis[k](1);
         z=kdop_data[3*k+2];//kdop_axis[k](2);
+
+        double upperA=-INFINITY;
+        double lowerA=INFINITY;
         for(int i=0;i<2*(order_num+1);i++)
         {
           level = x*A_data[i] +
@@ -426,9 +431,9 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<3;i++)
         {
-          level = x*_position_data[i] +
-                  y*_position_data[i+3]+
-                  z*_position_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+          level = x*B_data[i] +
+                  y*B_data[i+3]+
+                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
@@ -452,16 +457,29 @@ class CCD
 
       Data B(2*(order_num+1),3);
       B<<_position+_tMin*_direction,_position+_tMax*_direction;
-      
+
+      double *A_data=A.data();
+      double *B_data=B.data();
+      double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
+      double x,y,z;
+      
+      
       for(int k=0;k<dim;k++)
       {
+        x=kdop_data[3*k];//kdop_axis[k](0);
+        y=kdop_data[3*k+1];//kdop_axis[k](1);
+        z=kdop_data[3*k+2];//kdop_axis[k](2);
+
         double upperA=-INFINITY;
         double lowerA=INFINITY;
         for(int i=0;i<2*(order_num+1);i++)
         {
-          level = kdop_axis[k].dot(A.row(i));
+          //level = kdop_axis[k].dot(A.row(i));
+          level = x*A_data[i] +
+                  y*A_data[i+2*(order_num+1)]+
+                  z*A_data[i+4*(order_num+1)];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -472,7 +490,10 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<2*(order_num+1);i++)
         {
-          level = kdop_axis[k].dot(B.row(i));
+          //level = kdop_axis[k].dot(B.row(i));
+          level = x*B_data[i] +
+                  y*B_data[i+2*(order_num+1)]+
+                  z*B_data[i+4*(order_num+1)];//kdop_axis[k].dot(A.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
@@ -490,16 +511,26 @@ class CCD
     static bool SelfKDOPDCD(const Data& position,const Data& _position, const double& d)
     {
       
+      const double *A_data=position.data();
+      const double *B_data=_position.data();
+      double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
+      double x,y,z;
       for(int k=0;k<dim;k++)
       {
+        x=kdop_data[3*k];//kdop_axis[k](0);
+        y=kdop_data[3*k+1];//kdop_axis[k](1);
+        z=kdop_data[3*k+2];//kdop_axis[k](2);
         
         double upperA=-INFINITY;
         double lowerA=INFINITY;
         for(int i=0;i<(order_num+1);i++)
         {
-          level = kdop_axis[k].dot(position.row(i));
+          //level = kdop_axis[k].dot(position.row(i));
+          level = x*A_data[i] +
+                  y*A_data[i+(order_num+1)]+
+                  z*A_data[i+2*(order_num+1)];
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -510,7 +541,10 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<(order_num+1);i++)
         {
-          level = kdop_axis[k].dot(_position.row(i));
+          //level = kdop_axis[k].dot(_position.row(i));
+          level = x*B_data[i] +
+                  y*B_data[i+(order_num+1)]+
+                  z*B_data[i+2*(order_num+1)];
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)

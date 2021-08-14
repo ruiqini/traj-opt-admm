@@ -38,7 +38,7 @@ class Separate
       nvrtx1 = order_num+1;
       nvrtx2 = 3;
       
-      const double *position_data=position.data();
+      const double *A_data=position.data();
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<nvrtx1; i++)
       {
@@ -46,11 +46,11 @@ class Separate
 
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position_data[j*nvrtx1+i];//position(i,j);
+          vrtx1[i][j] = A_data[j*nvrtx1+i];//position(i,j);
         }
       }
         
-      const double *_position_data=_position.data();  
+      const double *B_data=_position.data();  
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -58,7 +58,7 @@ class Separate
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position_data[j*nvrtx2+i];//_position(i,j);
+          vrtx2[i][j] = B_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         
@@ -126,9 +126,9 @@ class Separate
       d=INFINITY;
       for(int i=0;i<3;i++)
       {
-        double d0=-c_data[0]*_position_data[i]
-                  -c_data[1]*_position_data[3+i]
-                  -c_data[2]*_position_data[6+i];//-c.dot(_position.row(i));
+        double d0=-c_data[0]*B_data[i]
+                  -c_data[1]*B_data[3+i]
+                  -c_data[2]*B_data[6+i];//-c.dot(_position.row(i));
         if(d>d0)
           d=d0;
       }
@@ -241,7 +241,8 @@ class Separate
       // two bodies that will be passed to the GJK procedure. 
       nvrtx1 = order_num+1;
       nvrtx2 = order_num+1;
-
+      
+      const double *A_data=position.data();
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<nvrtx1; i++)
       {
@@ -249,11 +250,11 @@ class Separate
 
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position(i,j);
+          vrtx1[i][j] = A_data[j*nvrtx1+i];//position(i,j);
         }
       }
         
-        
+      const double *B_data=_position.data();  
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -261,7 +262,7 @@ class Separate
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position(i,j);
+          vrtx2[i][j] = B_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         
