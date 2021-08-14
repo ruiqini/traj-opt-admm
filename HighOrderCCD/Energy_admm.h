@@ -63,7 +63,7 @@ class Energy_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
             
-            Eigen::MatrixXd P=basis*bz;
+            Eigen::MatrixXd P; P.noalias()=basis*bz;
 
             double d;
             
@@ -77,7 +77,7 @@ class Energy_admm
                     d = P_data[j]*c_data[0] + 
                         P_data[j+(order_num+1)]*c_data[1] + 
                         P_data[j+2*(order_num+1)]*c_data[2] +d_list[k];
-                        
+
                     if(d<=0)
                         return INFINITY;
                     
@@ -109,7 +109,7 @@ class Energy_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
             
-            Eigen::MatrixXd P=basis*bz;
+            Eigen::MatrixXd P; P.noalias()=basis*bz;
 
             double d;
            

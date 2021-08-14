@@ -145,7 +145,7 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position_data[j*nvrtx1+i];//position0(i,j);
+          vrtx1[i][j] = position_data[j*(order_num+1)+i];//position0(i,j);
         }
       }
       
@@ -156,7 +156,7 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i+order_num+1][j] = position_data[j*nvrtx1+i];//position1(i,j);
+          vrtx1[i+order_num+1][j] = position_data[j*(order_num+1)+i];//position1(i,j);
         }
       }
         

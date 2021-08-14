@@ -73,8 +73,8 @@ class Step
             bz_d=direction.block<order_num+1,3>(sp_id*(order_num-2),0);
             
             Eigen::MatrixXd P(order_num+1,3),D(order_num+1,3);
-            P=basis*bz;
-            D=basis*bz_d;
+            P.noalias()=basis*bz;
+            D.noalias()=basis*bz_d;
             //for(auto it = temp_pairs[tr_id].begin(); it != temp_pairs[tr_id].end();)
             for(int i=0;i<collision_size;i++)
             {
@@ -132,8 +132,8 @@ class Step
               bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
               bz_d=direction_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
            
-              Eigen::MatrixXd P = basis*bz;
-              Eigen::MatrixXd D = basis*bz_d;
+              Eigen::MatrixXd P; P.noalias() = basis*bz;
+              Eigen::MatrixXd D; D.noalias() = basis*bz_d;
               P_list.push_back(P);
               D_list.push_back(D);
 

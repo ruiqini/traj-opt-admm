@@ -143,9 +143,9 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
         
         Eigen::MatrixXd bz;
         bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
-        Eigen::MatrixXd P=basis*bz;
+        Eigen::MatrixXd P; P.noalias() = basis*bz;
 
-        Eigen::MatrixXd l = P * aabb_matrix;
+        Eigen::MatrixXd l; l.noalias() = P * aabb_matrix;
 	      double *l_data = l.data();
         
         for(int k=0;k<dim;k++)
@@ -193,11 +193,11 @@ void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<st
         bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
         bz_d=direction.block<order_num+1,3>(sp_id*(order_num-2),0);
         
-        Eigen::MatrixXd P = basis*bz;
-        Eigen::MatrixXd PD = basis*(bz+bz_d);
+        Eigen::MatrixXd P; P.noalias()= basis*bz;
+        Eigen::MatrixXd PD; PD.noalias()= basis*(bz+bz_d);
         
-        Eigen::MatrixXd l = P * aabb_matrix;
-        Eigen::MatrixXd _l = PD * aabb_matrix;
+        Eigen::MatrixXd l; l.noalias() = P * aabb_matrix;
+        Eigen::MatrixXd _l; _l.noalias() = PD * aabb_matrix;
 	      
         double *l_data = l.data();
         double *_l_data = _l.data();

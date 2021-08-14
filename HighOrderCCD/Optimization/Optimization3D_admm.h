@@ -99,7 +99,7 @@ public:
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
             
-            Eigen::MatrixXd P =basis*bz;
+            Eigen::MatrixXd P; P.noalias()=basis*bz;
             
             
             for(int i=0;i<collision_size;i++)

@@ -347,22 +347,31 @@ class Gradient_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(init,0);
             
-            Eigen::MatrixXd P=basis*bz;
+            Eigen::MatrixXd P; P.noalias()=basis*bz;
             double d;
-            
             Eigen::Matrix3d I; I.setIdentity();
             
+            double * P_data=P.data();
+
+            
+                
+            
+                //const double * c_data=c_list[k].data();
             for(int j=0;j<=order_num;j++)
             {
                 Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j),I);
                 A.transposeInPlace();
                 for(unsigned int k=0;k<c_list.size();k++)
                 {
-                    //d=P[j].dot(c_list[k])+d_list[k];
-                    d=P.row(j).dot(c_list[k])+d_list[k];
-                    
+                    //d=P.row(j).dot(c_list[k])+d_list[k];
+                    const double * c_data=c_list[k].data();
+                    d = P_data[j]*c_data[0] + 
+                        P_data[j+(order_num+1)]*c_data[1] + 
+                        P_data[j+2*(order_num+1)]*c_data[2] +d_list[k];
+
                     if(d<margin)
                     { 
+                       
                         //std::cout<<A<<"\n";
                        Eigen::MatrixXd d_x=A * c_list[k];
 
@@ -371,8 +380,23 @@ class Gradient_admm
                        grad += e1*d_x;
 
                        double e2=-weight*(2*log(d/margin)+4*(d-margin)/d-(d-margin)*(d-margin)/(d*d));
-                                        
-                       hessian += e2*d_x*d_x.transpose();
+                       /*
+                       double * dx_data=d_x.data();
+                       std::vector<double> h_data;
+                       h_data.resize(3*(order_num+1)*3*(order_num+1));
+                       for(int k0=0;k0<3*(order_num+1);k0++)
+                       {
+                          for(int k1=k0;k1<3*(order_num+1);k1++)
+                          {
+                              double val=e2*dx_data[k0]*dx_data[k1];
+                              h_data[k0*3*(order_num+1)+k1] =val;
+                              h_data[k1*3*(order_num+1)+k0] =val;    
+                          }  
+                       }
+                       Eigen::Matrix<double,3*(order_num+1),3*(order_num+1)> h(h_data.data());  
+                       hessian += h;
+                       */               
+                       hessian.noalias() += e2*d_x*d_x.transpose();
 
                     }
                 }
@@ -409,7 +433,7 @@ class Gradient_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(init,0);
             
-            Eigen::MatrixXd P=basis*bz;
+            Eigen::MatrixXd P; P.noalias()=basis*bz;
 
             double d;
             
@@ -458,7 +482,7 @@ class Gradient_admm
                     
                     grad += e1*d_x.transpose();
                     
-                    hessian += e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
+                    hessian.noalias() += e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
                     
                     double e3=-e1/piece_time
                               +e2*(vel_limit-d)/piece_time;
@@ -509,7 +533,7 @@ class Gradient_admm
                     
                     grad += e1*d_x.transpose();
                                         
-                    hessian+=e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
+                    hessian.noalias() += e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
                    
                     double e3=-2*e1/piece_time
                               +2*e2*(acc_limit-d)/piece_time;
