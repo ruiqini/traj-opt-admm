@@ -523,16 +523,20 @@ int main(int argc, char *argv[])
       }
     }
   }
-  
+  Eigen::MatrixXd P0,P1,C;
+          P0.resize(subdivide_tree.size()*(order_num+1),3);
+          P1.resize(subdivide_tree.size()*(order_num+1),3);
+          C.resize(subdivide_tree.size()*(order_num+1),3);
   const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
   {  
      if(iter<num) 
      {
-       if(iter<turns||automove)
+        if(iter<turns||automove)
         {
-          viewer.data().clear_edges();
+          //viewer.data().clear_edges();
                     
           //viewer.data().line_width = 5.0f;
+          int edge_iter=0;
           for(unsigned int k=0;k<subdivide_tree.size();k++)
           {
             int sp_id=std::get<0>(subdivide_tree[k]);
@@ -553,17 +557,26 @@ int main(int argc, char *argv[])
             {
               for(int j=0;j<=order_num;j++)
               {
-                viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+                P0.row(edge_iter)=P[j];
+                P1.row(edge_iter)=P[(j+1)%(order_num+1)];
+                C.row(edge_iter)=Eigen::RowVector3d(0.2,0.8,0.8);
+                edge_iter++;
+                //viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
               }
             }
             else
             {
               for(int j=0;j<=order_num;j++)
               {
-                viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+                P0.row(edge_iter)=P[j];
+                P1.row(edge_iter)=P[(j+1)%(order_num+1)];
+                C.row(edge_iter)=Eigen::RowVector3d(0.8,0.2,0.8);
+                edge_iter++;
+                //viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
               }
             }
           }
+          viewer.data().change_edges(P0, P1, C);
         }
         
         if(gnorm<stop && is_write)
@@ -621,7 +634,7 @@ int main(int argc, char *argv[])
           /*
           Optimization3D_am::optimization(spline, piece_time, 
                                           V, F, bvh);
-          */       
+           */    
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
           std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;

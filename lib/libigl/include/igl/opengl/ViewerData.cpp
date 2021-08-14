@@ -387,6 +387,32 @@ IGL_INLINE void igl::opengl::ViewerData::set_edges_from_vector_field(
   set_edges(PV,E, C.rows() == 1?C:C.replicate<2,1>());
 }
 
+IGL_INLINE void igl::opengl::ViewerData::change_edges(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2, const Eigen::MatrixXd& C)
+{
+  Eigen::MatrixXd P1_temp,P2_temp;
+
+  // If P1 only has two columns, pad with a column of zeros
+  if (P1.cols() == 2)
+  {
+    P1_temp = Eigen::MatrixXd::Zero(P1.rows(),3);
+    P1_temp.block(0,0,P1.rows(),2) = P1;
+    P2_temp = Eigen::MatrixXd::Zero(P2.rows(),3);
+    P2_temp.block(0,0,P2.rows(),2) = P2;
+  }
+  else
+  {
+    P1_temp = P1;
+    P2_temp = P2;
+  }
+
+  int lastid = lines.rows();
+  //lines.conservativeResize(lines.rows() + P1_temp.rows(),9);
+  for (unsigned i=0; i<P1_temp.rows(); ++i)
+    lines.row(i) << P1_temp.row(i), P2_temp.row(i),  C.row(i);
+
+  dirty |= MeshGL::DIRTY_OVERLAY_LINES;
+}
+
 IGL_INLINE void igl::opengl::ViewerData::add_edges(const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2, const Eigen::MatrixXd& C)
 {
   Eigen::MatrixXd P1_temp,P2_temp;

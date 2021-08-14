@@ -341,27 +341,28 @@ class CCD
       return gjk_distance2 <= d*d;
     }
 
-    static bool KDOPCCD(const Data& position, const Data& direction,const Data& _position,  
-                        const double& d, const double& tMin, const double& tMax)
+    static bool KDOPDCD(const Data& position, const Data& _position, const double& d)
     {
-      Data A(2*(order_num+1),3);
-      A<<position+tMin*direction,position+tMax*direction;
-      
+      //Data A((order_num+1),3);
+      //A<<position;
+      const double *position_data=position.data();
+      const double *_position_data=_position.data();
+      double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
-
-      Eigen::MatrixXd l = A * kdop_matrix;
-	    Eigen::MatrixXd _l = _position * kdop_matrix;
-	    double *l_data = l.data();
-	    double *_l_data = _l.data();
-
+      double x,y,z;
       for(int k=0;k<dim;k++)
       {
         double upperA=-INFINITY;
         double lowerA=INFINITY;
-        for(int i=0;i<2*(order_num+1);i++)
+        x=kdop_data[3*k];//kdop_axis[k](0);
+        y=kdop_data[3*k+1];//kdop_axis[k](1);
+        z=kdop_data[3*k+2];//kdop_axis[k](2);
+        for(int i=0;i<(order_num+1);i++)
         {
-          level = l_data[k*2*(order_num + 1) + i];//kdop_axis[k].dot(A.row(i));
+          level = x*position_data[i] +
+                  y*position_data[i+(order_num+1)]+
+                  z*position_data[i+2*(order_num+1)];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -372,7 +373,9 @@ class CCD
         double lowerB=INFINITY;
         for(int i=0;i<3;i++)
         {
-          level =  _l_data[k*3 + i];//kdop_axis[k].dot(_position.row(i));
+          level = x*_position_data[i] +
+                  y*_position_data[i+3]+
+                  z*_position_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
@@ -387,36 +390,43 @@ class CCD
 
     }
 
-    static bool KDOPDCD(const Data& position, const Data& _position, const double & d)
+    
+    static bool KDOPCCD(const Data& position, const Data& direction, const Data& _position,  
+                       const double& d, const double& tMin, const double& tMax)
     {
-      
-      
+      Data A(2*(order_num+1),3);
+      A<<position+tMin*direction,position+tMax*direction;
+      double *A_data=A.data();
+      const double *_position_data=_position.data();
+      double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
       double level;
-
-      Eigen::MatrixXd l = position * kdop_matrix;
-	    Eigen::MatrixXd _l = _position * kdop_matrix;
-	    double *l_data = l.data();
-	    double *_l_data = _l.data();
-
+      double x,y,z;
       for(int k=0;k<dim;k++)
       {
-        double upperA = -INFINITY;
-        double lowerA = INFINITY;
-        for(int i=0;i<(order_num+1);i++)
+        double upperA=-INFINITY;
+        double lowerA=INFINITY;
+        x=kdop_data[3*k];//kdop_axis[k](0);
+        y=kdop_data[3*k+1];//kdop_axis[k](1);
+        z=kdop_data[3*k+2];//kdop_axis[k](2);
+        for(int i=0;i<2*(order_num+1);i++)
         {
-          level =  l_data[k*(order_num + 1) + i];//kdop_axis[k].dot(A.row(i));
+          level = x*A_data[i] +
+                  y*A_data[i+2*(order_num+1)]+
+                  z*A_data[i+4*(order_num+1)];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
             upperA=level;
         }
 
-        double upperB = -INFINITY;
-        double lowerB = INFINITY;
+        double upperB=-INFINITY;
+        double lowerB=INFINITY;
         for(int i=0;i<3;i++)
         {
-          level = _l_data[k*3 + i];//kdop_axis[k].dot(_position.row(i));
+          level = x*_position_data[i] +
+                  y*_position_data[i+3]+
+                  z*_position_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)

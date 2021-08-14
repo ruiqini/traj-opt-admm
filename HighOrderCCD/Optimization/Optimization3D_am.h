@@ -58,7 +58,7 @@ public:
 
       //energy_file <<Energy::fast_whole_energy( spline, V, F, bvh)<<std::endl;
       
-      clock_t time2 = clock();
+      //clock_t time2 = clock();
       std::cout<<std::endl<<"separate:"<<(time0-time_0)/(CLOCKS_PER_SEC/1000)<<std::endl;
       std::cout<<"spline:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
   }
