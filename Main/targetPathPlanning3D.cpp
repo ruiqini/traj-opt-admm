@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
   }
 
 
-  M_dynamic=Dynamic<order_num, der_num>::dynamic_matrix();//Dynamic<order_num,1>::dynamic_matrix()+
+  M_dynamic=Dynamic3D<order_num, der_num>::dynamic_matrix();//Dynamic<order_num,1>::dynamic_matrix()+
   
   subdivide_tree.resize(piece_num*res);
   Eigen::MatrixXd basis;

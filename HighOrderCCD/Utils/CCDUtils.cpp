@@ -15,16 +15,16 @@ double epsilon ,
        gnorm, gtime, tnorm,
        mu;
 
-std::vector< std::tuple< int, std::pair<double,double>, Eigen::Matrix<double,order_num+1,order_num+1> > > subdivide_tree;
+std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd> > subdivide_tree;
 bool automove, step_choose, adaptive_change, optimize_time;
 std::ofstream  result_file, init_file;
-Eigen::Matrix<double,order_num+1,order_num+1> M_dynamic;
+Eigen::MatrixXd M_dynamic;
 
 std::vector<bool> reach_target;
 
 std::vector<double> time_weight;
 double whole_weight;
-std::vector<Eigen::Matrix<double,order_num+1,order_num+1>> convert_list;
+std::vector<Eigen::MatrixXd> convert_list;
 
 double piece_time, kt, ks;
 double vel_limit, acc_limit;
