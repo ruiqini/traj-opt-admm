@@ -435,9 +435,15 @@ int main(int argc, char *argv[])
 
   M_dynamic=Dynamic3D<order_num, der_num>::dynamic_matrix();//Dynamic<order_num,1>::dynamic_matrix()+
   
-  subdivide_tree.resize(piece_num*res);
-  Eigen::MatrixXd basis;
   
+  subdivide_tree.resize(piece_num*res);
+  A_list.resize(piece_num*res);
+  A_vel_list.resize(piece_num*res);
+  A_acc_list.resize(piece_num*res);
+
+  Eigen::MatrixXd basis, tmp_basis;
+  
+  Eigen::Matrix3d I; I.setIdentity();
   for(int k=0;k<res;k++)
   {
     double a=k/double(res),b=(k+1)/double(res);
@@ -447,7 +453,34 @@ int main(int argc, char *argv[])
     for(int i=0;i<piece_num;i++)
     { 
       std::pair<double,double> range(a,b);
+      //basis*=;
       subdivide_tree[i*res+k]=std::make_tuple(i,range,basis*convert_list[i]);
+      tmp_basis=basis*convert_list[i];
+      
+      A_list[i*res+k].resize(order_num+1);
+      A_vel_list[i*res+k].resize(order_num);
+      A_acc_list[i*res+k].resize(order_num-1);
+      
+      for(int j=0;j<=order_num;j++)
+      {
+        Eigen::MatrixXd A=Eigen::kroneckerProduct(tmp_basis.row(j),I);
+        A.transposeInPlace();
+        A_list[i*res+k][j]=A;
+        if(j<order_num)
+        {
+          A=Eigen::kroneckerProduct(tmp_basis.row(j+1),I)-
+            Eigen::kroneckerProduct(tmp_basis.row(j),I);
+          A_vel_list[i*res+k][j]=A;
+        }
+        if(j<order_num-1)
+        {
+          A=Eigen::kroneckerProduct(tmp_basis.row(j+2),I)-
+            2 * Eigen::kroneckerProduct(tmp_basis.row(j+1),I)+
+            Eigen::kroneckerProduct(tmp_basis.row(j),I);
+          A_acc_list[i*res+k][j]=A;
+        }
+        
+      }
     }
   }  
   

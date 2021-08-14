@@ -359,8 +359,8 @@ class Gradient_admm
                 //const double * c_data=c_list[k].data();
             for(int j=0;j<=order_num;j++)
             {
-                Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j),I);
-                A.transposeInPlace();
+                //Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j),I);
+                //A.transposeInPlace();
                 for(unsigned int k=0;k<c_list.size();k++)
                 {
                     //d=P.row(j).dot(c_list[k])+d_list[k];
@@ -373,11 +373,11 @@ class Gradient_admm
                     { 
                        
                         //std::cout<<A<<"\n";
-                       Eigen::MatrixXd d_x=A * c_list[k];
+                       Eigen::MatrixXd d_x; d_x.noalias()=A_list[tr_id][j]* c_list[k];//A * c_list[k];
 
                        double e1=-weight*(2*(d-margin)*log(d/margin)+(d-margin)*(d-margin)/d);
 
-                       grad += e1*d_x;
+                       grad.noalias() += e1*d_x;
 
                        double e2=-weight*(2*log(d/margin)+4*(d-margin)/d-(d-margin)*(d-margin)/(d*d));
                        /*
@@ -433,8 +433,13 @@ class Gradient_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(init,0);
             
-            Eigen::MatrixXd P; P.noalias()=basis*bz;
-
+            //Eigen::MatrixXd P; P.noalias()=basis*bz;
+            std::vector<Eigen::RowVector3d> P;
+            P.resize(order_num+1);
+            for(int j=0;j<=order_num;j++)
+            {
+                P[j]=basis.row(j)*bz;
+            }
             double d;
             
             Eigen::Matrix3d I; I.setIdentity();
@@ -443,7 +448,7 @@ class Gradient_admm
             for(int j=0;j<order_num;j++)
             {
                 //Eigen::RowVector3d P_=P[j+1]-P[j];
-                Eigen::RowVector3d P_=P.row(j+1)-P.row(j);
+                Eigen::RowVector3d P_=P[j+1]-P[j];//P.row(j+1)-P.row(j);
                 //Eigen::RowVector3d vel=order_num*P_;
                 double d_=P_.norm();
 
@@ -467,34 +472,33 @@ class Gradient_admm
                    h_t+=-2*e1*v/std::pow(piece_time,3)+
                         +e2*v*v/std::pow(piece_time,4);
                    
-                    Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j+1),I)-
-                                      Eigen::kroneckerProduct(basis.row(j),I);
+                    //Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j+1),I)-
+                    //                  Eigen::kroneckerProduct(basis.row(j),I);
+                    Eigen::MatrixXd A=A_vel_list[tr_id][j];
                     //std::cout<<A<<"\n";
                     Eigen::RowVector3d d_p;
                     Eigen::Matrix3d h_p;
 
-                    
-                    d_p=-order_num/(weight*piece_time)*P_/d_;
+                    d_p.noalias()=-order_num/(weight*piece_time)*P_/d_;
         
-                    h_p=-order_num/(weight*piece_time)*(I/d_-P_.transpose()*P_/std::pow(d_,3));
+                    h_p.noalias()=-order_num/(weight*piece_time)*(I/d_-P_.transpose()*P_/std::pow(d_,3));
 
-                    Eigen::MatrixXd d_x=d_p*A;
+                    Eigen::MatrixXd d_x; d_x.noalias()=d_p*A;
                     
-                    grad += e1*d_x.transpose();
+                    grad.noalias() += e1*d_x.transpose();
                     
                     hessian.noalias() += e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
                     
-                    double e3=-e1/piece_time
-                              +e2*(vel_limit-d)/piece_time;
+                    double e3=-e1/piece_time + e2*(vel_limit-d)/piece_time;
                     
-                    partgrad += e3*d_x.transpose();
+                    partgrad.noalias() += e3*d_x.transpose();
                 }
             }
            
             for(int j=0;j<order_num-1;j++)
             {
                 //Eigen::RowVector3d P_=P[j+2]-2*P[j+1]+P[j];
-                Eigen::RowVector3d P_=P.row(j+2)-2*P.row(j+1)+P.row(j);
+                Eigen::RowVector3d P_=P[j+2]-2*P[j+1]+P[j];//P.row(j+2)-2*P.row(j+1)+P.row(j);
                 //Eigen::RowVector3d acc=order_num*(order_num-1)*P_;
                 double d_ = P_.norm();
                 double a = order_num*(order_num-1)*d_/(weight*weight);
@@ -518,27 +522,27 @@ class Gradient_admm
                         +4*e2*a*a/std::pow(piece_time,6);
                                            
                     //Eigen::Matrix3d I; I.setIdentity();
-                    Eigen::MatrixXd A=Eigen::kroneckerProduct(basis.row(j+2),I)-
-                                      2 * Eigen::kroneckerProduct(basis.row(j+1),I)+
-                                      Eigen::kroneckerProduct(basis.row(j),I);
+                    //Eigen::MatrixXd A = Eigen::kroneckerProduct(basis.row(j+2),I)-
+                    //                    2 * Eigen::kroneckerProduct(basis.row(j+1),I)+
+                    //                    Eigen::kroneckerProduct(basis.row(j),I);
+                    Eigen::MatrixXd A=A_acc_list[tr_id][j];
                     //std::cout<<A<<"\n";
                     Eigen::RowVector3d d_p;
                     Eigen::Matrix3d h_p;
                     
-                    d_p=-order_num*(order_num-1)/std::pow(weight*piece_time,2)*P_/d_;
+                    d_p.noalias() =-order_num*(order_num-1)/std::pow(weight*piece_time,2)*P_/d_;
         
-                    h_p=-order_num*(order_num-1)/std::pow(weight*piece_time,2)*(I/d_-P_.transpose()*P_/std::pow(d_,3));
+                    h_p.noalias() =-order_num*(order_num-1)/std::pow(weight*piece_time,2)*(I/d_-P_.transpose()*P_/std::pow(d_,3));
 
-                    Eigen::MatrixXd d_x=d_p*A;
+                    Eigen::MatrixXd d_x; d_x.noalias()=d_p*A;
                     
-                    grad += e1*d_x.transpose();
+                    grad.noalias() += e1*d_x.transpose();
                                         
                     hessian.noalias() += e2*d_x.transpose()*d_x+e1*A.transpose()*h_p*A;
                    
-                    double e3=-2*e1/piece_time
-                              +2*e2*(acc_limit-d)/piece_time;
+                    double e3=-2*e1/piece_time + 2*e2*(acc_limit-d)/piece_time;
                    
-                    partgrad += e3*d_x.transpose();
+                    partgrad.noalias() += e3*d_x.transpose();
                 }
             }
         

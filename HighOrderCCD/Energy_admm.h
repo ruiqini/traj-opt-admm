@@ -109,13 +109,18 @@ class Energy_admm
             Eigen::MatrixXd bz;
             bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
             
-            Eigen::MatrixXd P; P.noalias()=basis*bz;
-
+            //Eigen::MatrixXd P; P.noalias()=basis*bz;
+            std::vector<Eigen::RowVector3d> P;
+            P.resize(order_num+1);
+            for(int j=0;j<=order_num;j++)
+            {
+                P[j]=basis.row(j)*bz;
+            }
             double d;
            
             for(int j=0;j<order_num;j++)
             {
-                Eigen::RowVector3d vel=order_num*(P.row(j+1)-P.row(j));
+                Eigen::RowVector3d vel=order_num*(P[j+1]-P[j]);//(P.row(j+1)-P.row(j));
 
                 d=vel_limit-vel.norm()/(weight*piece_time);
                 //d=vel_limit*vel_limit-vel.squaredNorm()/std::pow(weight*piece_time,2);
@@ -132,7 +137,7 @@ class Energy_admm
            
             for(int j=0;j<order_num-1;j++)
             {
-                Eigen::RowVector3d acc=order_num*(order_num-1)*(P.row(j+2)-2*P.row(j+1)+P.row(j));
+                Eigen::RowVector3d acc=order_num*(order_num-1)*(P[j+2]-2*P[j+1]+P[j]);//(P.row(j+2)-2*P.row(j+1)+P.row(j));
                 
                 d=acc_limit-acc.norm()/(weight*weight*piece_time*piece_time);
                 //d=acc_limit*acc_limit-acc.squaredNorm()/std::pow(weight*weight*piece_time*piece_time,2);

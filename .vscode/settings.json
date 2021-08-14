@@ -57,6 +57,7 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "kroneckerproduct": "cpp"
+        "kroneckerproduct": "cpp",
+        "string": "cpp"
     }
 }

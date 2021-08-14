@@ -16,6 +16,7 @@ double epsilon ,
        mu;
 
 std::vector< std::tuple< int, std::pair<double,double>, Eigen::MatrixXd> > subdivide_tree;
+std::vector<std::vector< Eigen::MatrixXd>> A_list, A_vel_list, A_acc_list;
 bool automove, step_choose, adaptive_change, optimize_time;
 std::ofstream  result_file, init_file;
 Eigen::MatrixXd M_dynamic;
