@@ -66,14 +66,18 @@ class Energy_admm
             Eigen::MatrixXd P=basis*bz;
 
             double d;
-
+            
+            double * P_data=P.data();
             for(unsigned int k=0;k<c_list.size();k++)
             {
+                double * c_data=c_list[k].data();
                 for(int j=0;j<=order_num;j++)
                 {
-                    //d=P[j].dot(c_list[k])+d_list[k];
-                    d=P.row(j).dot(c_list[k])+d_list[k];
-
+                    //d=P.row(j).dot(c_list[k])+d_list[k];
+                    d = P_data[j]*c_data[0] + 
+                        P_data[j+(order_num+1)]*c_data[1] + 
+                        P_data[j+2*(order_num+1)]*c_data[2] +d_list[k];
+                        
                     if(d<=0)
                         return INFINITY;
                     

@@ -31,7 +31,7 @@ public:
                            std::vector<Data>& spline_list, std::vector<double>& piece_time_list,
                            std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list, 
                            std::vector<Data>& p_lambda_list, std::vector<Eigen::VectorXd>& t_lambda_list, 
-                           const Eigen::MatrixXd & V,const Eigen::MatrixXi& F,
+                           const std::vector<Eigen::Matrix3d>& face_list,
                            BVH& bvh)
   {
     
@@ -61,7 +61,7 @@ public:
         std::vector<std::vector<Eigen::Vector3d>> c_list;
         std::vector<std::vector<double>> d_list;
 
-        separate_plane(spline_list[i], V, F, c_list, d_list, bvh);
+        separate_plane(spline_list[i], face_list, c_list, d_list, bvh);
 
         c_lists[i]=c_list;
         d_lists[i]=d_list;
@@ -107,14 +107,13 @@ public:
           continue;
         }
 
-        double step=Step::position_step(spline_list[i], direction_list[i],V,F, bvh);  
+        double step=Step::position_step(spline_list[i], direction_list[i],face_list, bvh);  
         //double step=Step::mix_step(spline_list[i], direction_list[i],V,F, bvh, c_lists[i], d_lists[i]);  
         if(step<step_list[i])
            step_list[i]=step;
         spline_line_search( spline_list[i], direction_list[i],  piece_time_list[i], t_direction_list[i],
                             p_slack_list[i], t_slack_list[i],
                             p_lambda_list[i],  t_lambda_list[i],
-                            V,F, bvh, 
                             c_lists[i], d_lists[i],
                             step_list[i]);
       }
@@ -151,7 +150,7 @@ public:
   }
 
   static void separate_plane(const Data& spline, 
-                             const Eigen::MatrixXd & V,const Eigen::MatrixXi& F,
+                             const std::vector<Eigen::Matrix3d>& face_list,
                              std::vector<std::vector<Eigen::Vector3d>>& c_list,
                              std::vector<std::vector<double>>& d_list,
                              BVH& bvh)
@@ -188,10 +187,10 @@ public:
             {
               int ob_id=collision_pair[i];
 
-              int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
+              //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
               
-              Eigen::Matrix3d _position;
-              _position<<V.row(f0),V.row(f1),V.row(f2);
+              Eigen::Matrix3d _position=face_list[ob_id];
+              //_position<<V.row(f0),V.row(f1),V.row(f2);
 
               Eigen::Vector3d c;
               double d;
@@ -591,7 +590,6 @@ public:
   static void spline_line_search(Data& spline, const Data& direction, double& piece_time, const double& t_direction,
                                  const Data& p_slack, const Eigen::VectorXd& t_slack,
                                  const Data& p_lambda, const Eigen::VectorXd& t_lambda,
-                                 const Eigen::MatrixXd & V,const Eigen::MatrixXi& F, BVH& bvh, 
                                  const std::vector<std::vector<Eigen::Vector3d>>& c_list,
                                  const std::vector<std::vector<double>>& d_list,
                                  double& step)

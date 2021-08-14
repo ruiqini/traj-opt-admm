@@ -29,7 +29,7 @@ public:
   static void optimization(Data& spline, double& piece_time,
                            Data& p_slack, Eigen::VectorXd& t_slack, 
                            Data& p_lambda, Eigen::VectorXd& t_lambda, 
-                           const Eigen::MatrixXd & V,const Eigen::MatrixXi& F,
+                           const std::vector<Eigen::Matrix3d>& face_list,
                            BVH& bvh)
   {
 
@@ -37,7 +37,7 @@ public:
       std::vector<std::vector<double>> d_lists;
       clock_t time_0 = clock();
 
-      separate_plane(spline, V, F, c_lists, d_lists, bvh);
+      separate_plane(spline, face_list, c_lists, d_lists, bvh);
       
       clock_t time0 = clock();
       
@@ -45,7 +45,7 @@ public:
       update_spline(spline,  piece_time,
                     p_slack, t_slack,
                     p_lambda,  t_lambda,
-                    V, F, bvh,
+                    face_list, bvh,
                     c_lists, d_lists);
       
       clock_t time1 = clock();     
@@ -67,7 +67,7 @@ public:
   }
 
   static void separate_plane(const Data& spline, 
-                             const Eigen::MatrixXd & V,const Eigen::MatrixXi& F,
+                             const std::vector<Eigen::Matrix3d>& face_list,
                              std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                              std::vector<std::vector<double>>& d_lists,
                              BVH& bvh)
@@ -106,10 +106,9 @@ public:
             {
               int ob_id=collision_pair[i];
 
-              int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
+              //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
               
-              Eigen::Matrix3d _position;
-              _position<<V.row(f0),V.row(f1),V.row(f2);
+              Eigen::Matrix3d _position=face_list[ob_id];
 
               Eigen::Vector3d c;
               double d;
@@ -133,7 +132,7 @@ public:
   static void update_spline(Data& spline, double& piece_time,
                             const Data& p_slack, const Eigen::VectorXd& t_slack,
                             const Data& p_lambda, const Eigen::VectorXd& t_lambda,
-                            const Eigen::MatrixXd & V,const Eigen::MatrixXi& F, BVH& bvh,
+                            const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh,
                             const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                             const std::vector<std::vector<double>>& d_lists)
   {
@@ -152,7 +151,7 @@ public:
     spline_line_search( spline, direction,  piece_time, t_direction,
                         p_slack, t_slack,
                         p_lambda,  t_lambda,
-                        V,F, bvh, 
+                        face_list, bvh, 
                         c_lists, d_lists);
     //clock_t time2 = clock();
     
@@ -435,13 +434,13 @@ public:
   static void spline_line_search(Data& spline, const Data& direction, double& piece_time, const double& t_direction,
                                  const Data& p_slack, const Eigen::VectorXd& t_slack,
                                  const Data& p_lambda, const Eigen::VectorXd& t_lambda,
-                                 const Eigen::MatrixXd & V,const Eigen::MatrixXi& F, BVH& bvh, 
+                                 const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh, 
                                  const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                                  const std::vector<std::vector<double>>& d_lists)
   {
     clock_t time0 = clock();
 
-    double step=Step::position_step(spline, direction,V,F, bvh);
+    double step=Step::position_step(spline, direction,face_list, bvh);
 
     clock_t time1 = clock();
 

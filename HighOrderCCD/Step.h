@@ -19,7 +19,7 @@ class Step
 
   
     static double position_step(const Data& spline, const Data& direction, 
-                                const Eigen::MatrixXd & V,const Eigen::MatrixXi& F,
+                                const std::vector<Eigen::Matrix3d>& face_list,
                                 BVH& bvh)
     {
         double step;
@@ -81,10 +81,10 @@ class Step
                 //int ob_id=*it;
                 int ob_id=collision_pairs[tr_id][i];
 
-                int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
+                //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
                 
-                Eigen::Matrix3d _position;
-                _position<<V.row(f0),V.row(f1),V.row(f2);
+                Eigen::Matrix3d _position=face_list[ob_id];
+                //_position<<V.row(f0),V.row(f1),V.row(f2);
 
                                                     
                 //std::cout<<"is_collided:"<<is_collided<<" \n";

@@ -34,9 +34,10 @@ class CCD
       
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
-      nvrtx1 = position.rows();
-      nvrtx2 = _position.rows();
-
+      nvrtx1 = order_num+1;
+      nvrtx2 = 3;
+      
+      const double *position_data=position.data();  
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<nvrtx1; i++)
       {
@@ -44,13 +45,11 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position(i,j);
+          vrtx1[i][j] = position_data[j*nvrtx1+i];//position(i,j);
         }
       }
 
-      
-        
-        
+      const double *_position_data=_position.data();    
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -58,7 +57,7 @@ class CCD
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position(i,j);
+          vrtx2[i][j] = _position_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         
@@ -134,8 +133,10 @@ class CCD
       
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
-      nvrtx1 = 2*position.rows();
-      nvrtx2 = _position.rows();
+      nvrtx1 = 2*(order_num+1);
+      nvrtx2 = 3;
+
+      const double *position_data=position0.data(); 
 
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
       for (int i=0; i<order_num+1; i++)
@@ -144,21 +145,22 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = position0(i,j);
+          vrtx1[i][j] = position_data[j*nvrtx1+i];//position0(i,j);
         }
       }
-
+      
+      position_data=position1.data();
       for (int i=0; i<order_num+1; i++)
       {
         vrtx1[i+order_num+1] = (double *)malloc(3 * sizeof(double));
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i+order_num+1][j] = position1(i,j);
+          vrtx1[i+order_num+1][j] = position_data[j*nvrtx1+i];//position1(i,j);
         }
       }
         
-        
+      const double *_position_data=_position.data();     
       double **vrtx2 = (double **)malloc(nvrtx2 * sizeof(double *));
       for (int i=0; i<nvrtx2; i++)
       {
@@ -166,7 +168,7 @@ class CCD
 
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = _position(i,j);
+          vrtx2[i][j] = _position_data[j*nvrtx2+i];//_position(i,j);
         }
       }
         

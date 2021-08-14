@@ -219,7 +219,17 @@ int main(int argc, char *argv[])
     bvh.InitObstacle(V,F);
   }
     
-
+  std::vector<Eigen::Matrix3d> face_list;
+  face_list.resize(F.rows());
+  for(int i=0;i<(int)face_list.size();i++)
+  {
+    int f0=F(i,0); int f1=F(i,1); int f2=F(i,2);
+              
+    Eigen::Matrix3d _position;
+    _position<<V.row(f0),V.row(f1),V.row(f2);
+    face_list[i]=_position;
+  }
+  
   clock_t time2 = clock();
 
   std::cout<<"time_obstacle:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
@@ -416,7 +426,7 @@ int main(int argc, char *argv[])
                                                 spline_list, piece_time_list, 
                                                 p_slack_list, t_slack_list, 
                                                 p_lambda_list, t_lambda_list,
-                                                V, F, bvh);
+                                                face_list, bvh);
           }
 
           draw_size=draw_tree_list[0].size();
