@@ -2,7 +2,7 @@
 #define SEPARATE_H
 
 #include "Utils/CCDUtils.h"
-
+#include "Optimal_plane.h"
 extern "C" {
 #include <openGJK/openGJK.h>
 }
@@ -143,82 +143,6 @@ class Separate
       
     }
 
-    static void optimal_d(const Data& position, const Data & _position, 
-                          const Eigen::Vector3d& c, const double& d0, const double& d1, double& d)
-    {
-      /*
-                    self_c_lists[p0][tr_id].push_back(c);
-                    self_d_lists[p0][tr_id].push_back(d-0.5*offset);
-
-                    self_c_lists[p1][tr_id].push_back(-c);
-                    self_d_lists[p1][tr_id].push_back(-d-0.5*offset);
-      */
-
-      double energy;
-      double grad_d, hessian_d;
-      double dist;
-
-      
-      double step=1.0;
-      while(true)
-      {
-        energy=0;
-        grad_d=0;
-        hessian_d=0;
-        for(int j=0;j<=order_num;j++)
-        {
-            //d=P[j].dot(c_list[k])+d_list[k];
-            dist=position.row(j).dot(c)+d-0.5*offset;
-            if(dist<margin)
-            { 
-                energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
-                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);  
-
-                double e1=-(2*(dist-margin)*log(dist/margin)+(dist-margin)*(dist-margin)/dist);
-
-                double e2=-(2*log(dist/margin)+4*(dist-margin)/dist-(dist-margin)*(dist-margin)/(dist*dist)); 
-
-                grad_d+=e1;
-                hessian_d+=e2;
-            }
-
-            dist=-_position.row(j).dot(c)-d-0.5*offset;
-            if(dist<margin)
-            { 
-                energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
-                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);   
-
-                double e1=-(2*(dist-margin)*log(dist/margin)+(dist-margin)*(dist-margin)/dist);
-
-                double e2=-(2*log(dist/margin)+4*(dist-margin)/dist-(dist-margin)*(dist-margin)/(dist*dist)); 
-
-                grad_d+=-e1;
-                hessian_d+=e2;
-            }
-        }
-
-        double direction_d=-grad_d/hessian_d;
-        /*
-        step=1.0;
-        if(d+step*direction_d<d0)
-        {
-
-        }
-        else if(d+step*direction_d>d1)
-        {
-
-        }
-        */
-        d=d+step*direction_d;
-        //std::cout<<grad_d<<"\n";
-        if(std::abs(grad_d)<0.01)
-          break;
-
-      }
-      //std::cout<<"\n";
-    }
-
-
     static bool selfgjk(const Data& position, const Data & _position, const double & distance,
                         Eigen::Vector3d& c, double& d)
     {
@@ -342,7 +266,7 @@ class Separate
       
       d=0.5*(d0+d1);
 
-      optimal_d(position, _position, c, d0, d1, d);
+      Optimal_plane::optimal_d(position, _position, c, d0, d1, d);
       //std::cout<<"d01:"<<d0<<" "<<d1<<"\n";
 
       //d1+=offset;
