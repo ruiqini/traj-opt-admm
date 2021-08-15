@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
   vel_limit=j["vel_limit"].get<double>();;//2
   acc_limit=j["acc_limit"].get<double>();;//2
     
-  result_file.open ("result/" +mesh_file + "_result_file_admm.txt");
+  result_file.open ("result/" +mesh_file + "_result_file_am.txt");
  
   double init_time=-INFINITY;
   Data spline;
@@ -671,15 +671,9 @@ int main(int argc, char *argv[])
 
           clock_t time0 = clock();
           std::cout<<"iter: "<<iter<<std::endl;
-              
           
-          Optimization3D_admm::optimization(spline, piece_time, 
-                                            p_slack, t_slack, 
-                                            p_lambda, t_lambda,
-                                            face_list, bvh);
-          
-          //Optimization3D_am::optimization(spline, piece_time, 
-          //                                face_list, bvh);
+          Optimization3D_am::optimization(spline, piece_time, 
+                                          face_list, bvh);
              
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);

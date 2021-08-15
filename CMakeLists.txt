@@ -69,6 +69,7 @@ ENDMACRO(ADD_EXE)
 
 
 ADD_EXE(admmPathPlanning3D)
+ADD_EXE(amPathPlanning3D)
 ADD_EXE(multiPathPlanning3D)
 ADD_EXE(targetPathPlanning3D)
 
