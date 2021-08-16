@@ -58,6 +58,12 @@ extern std::vector<double> time_weight;
 extern double whole_weight;
 extern std::vector<Eigen::MatrixXd> convert_list;
 
+extern std::vector<std::vector<std::vector<bool>>> is_self_seperate;
+extern std::vector<std::vector<std::vector<Eigen::Vector3d>>> self_seperate_c;
+extern std::vector<std::vector<std::vector<double>>> self_seperate_d;
+
+extern bool is_optimal_plane;
+
 extern double kt, ks;// time s
 extern double vel_limit, acc_limit;
 

@@ -71,7 +71,7 @@ public:
 
       std::vector<double> step_list; 
 
-      step_list=Step::self_step(spline_list, direction_list, bvh);
+      Step::self_step(spline_list, direction_list,step_list, bvh);
 
       for(int i=0;i<uav_num;i++)
       {
@@ -212,20 +212,72 @@ public:
                
                 if(CCD::SelfKDOPDCD(P0, P1,offset+2*margin))
                 {
-                  
-                  if(Separate::selfgjk(P0, P1, offset+2*margin,
-                                      c, d))//cgal
+                  if(is_optimal_plane)
                   {
-                    self_c_lists[p0][tr_id].push_back(c);
-                    self_d_lists[p0][tr_id].push_back(d-0.5*offset);
+                    if(is_self_seperate[tr_id][p0][p1]==false)
+                    {
+                      if(Separate::selfgjk(P0, P1, offset+2*margin,
+                                    c, d))
+                      {
+                        self_seperate_c[tr_id][p0][p1]=c; 
+                        self_seperate_d[tr_id][p0][p1]=d;
+                        is_self_seperate[tr_id][p0][p1]=true;
+                        
+                      }
 
-                    self_c_lists[p1][tr_id].push_back(-c);
-                    self_d_lists[p1][tr_id].push_back(-d-0.5*offset);
+                    }
+                    
+                  }
+                  else
+                  {
+                      if(Separate::selfgjk(P0, P1, offset+2*margin,
+                                          c, d))//cgal
+                      {
+                        Optimal_plane::optimal_d(P0, P1, c, d);
+                        //Optimal_plane::self_optimal_cd(P0,  P1, 
+                        //                               c,  d);
+                        self_c_lists[p0][tr_id].push_back(c);
+                        self_d_lists[p0][tr_id].push_back(d-0.5*offset);
 
+                        self_c_lists[p1][tr_id].push_back(-c);
+                        self_d_lists[p1][tr_id].push_back(-d-0.5*offset);
+
+                      }
                   }
                 }
             }
+            if(is_optimal_plane)
+                for(int p0=0;p0<uav_num;p0++)
+                {
+                  for(int p1=p0+1;p1<uav_num;p1++)
+                  {
+                      if(is_self_seperate[tr_id][p0][p1]==true)
+                      {
+                          Eigen::MatrixXd P0=P_list[p0];
+                          Eigen::MatrixXd P1=P_list[p1]; 
+                          Eigen::Vector3d c;
+                          double d;
+                          //std::cout<<"already\n";
+                          c=self_seperate_c[tr_id][p0][p1];
+                          d=self_seperate_d[tr_id][p0][p1];
+
+                          Optimal_plane::self_optimal_cd(P0,  P1, 
+                                                      c,  d);
+                          self_seperate_c[tr_id][p0][p1]=c;
+                          self_seperate_d[tr_id][p0][p1]=d;
+
+                          self_c_lists[p0][tr_id].push_back(c);
+                          self_d_lists[p0][tr_id].push_back(d-0.5*offset);
+
+                          self_c_lists[p1][tr_id].push_back(-c);
+                          self_d_lists[p1][tr_id].push_back(-d-0.5*offset);
+                      }
+                  
+                  }
+                }
         }
+
+       
   }
 
   static void update_slack_lambda(const Data& spline, const double& piece_time,

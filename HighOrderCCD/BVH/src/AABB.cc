@@ -695,9 +695,12 @@ namespace aabb
                 if (nodes[node].isLeaf() && nodes[_node].isLeaf())
                 {
                     // Can't interact with itself.
-                    if (nodes[node].particle != nodes[_node].particle)
+                    if (nodes[node].particle < nodes[_node].particle)//!=
                     {
-                       particles.push_back(std::make_pair(nodes[node].particle, nodes[_node].particle));
+                       //int p0=std::min(nodes[node].particle,nodes[_node].particle);
+                       //int p1=std::max(nodes[node].particle,nodes[_node].particle);
+                        
+                       particles.push_back(std::make_pair(nodes[node].particle,nodes[_node].particle));
                     }
                 }
                 else

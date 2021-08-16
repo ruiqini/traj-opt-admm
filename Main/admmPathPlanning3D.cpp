@@ -126,6 +126,8 @@ int main(int argc, char *argv[])
   automove = j["auto"].get<int>();
   step_choose = j["step_choose"].get<int>();
 
+  is_optimal_plane=j["optimal_plane"].get<int>();
+
   int init_spline=j["init"].get<int>();
   
   offset = j["offset"].get<double>();
@@ -625,12 +627,7 @@ int main(int argc, char *argv[])
         
         if(iter>1 && gnorm<stop && is_write)
         {
-          /*
-          if(optimize_time)
-          {
-            if(adaptive_change)
-            {
-              */
+          
               is_write = false;
               result_file<<iter<<std::endl;
               result_file<<whole_time<<std::endl;
@@ -645,25 +642,6 @@ int main(int argc, char *argv[])
                 automove=false;
               
               log_data(mesh_file, spline, piece_time);
-            /*
-            }
-
-            adaptive_change=true;
-
-          }
-          else
-          {
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            result_file<<spline<<std::endl;
-
-          
-            optimize_time=true;
-          }
-          */
-          
         }
         
         if(iter<turns||automove)
@@ -677,10 +655,7 @@ int main(int argc, char *argv[])
                                             p_slack, t_slack, 
                                             p_lambda, t_lambda,
                                             face_list, bvh);
-          
-          //Optimization3D_am::optimization(spline, piece_time, 
-          //                                face_list, bvh);
-             
+     
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
           std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;

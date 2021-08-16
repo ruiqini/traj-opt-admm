@@ -259,18 +259,18 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i][j] = A_data[j*(order_num+1)+i];//position0(i,j);
+          vrtx1[i][j] = A_data[j*(order_num+1)+i];//position0(i,j);//
         }
       }
       
-      A_data=position0.data();
+      A_data=position1.data();
       for (int i=0; i<order_num+1; i++)
       {
         vrtx1[i+order_num+1] = (double *)malloc(3 * sizeof(double));
         
         for(int j=0; j<3; j++) 
         {
-          vrtx1[i+order_num+1][j] = A_data[j*(order_num+1)+i];//position1(i,j);
+          vrtx1[i+order_num+1][j] = A_data[j*(order_num+1)+i];//position1(i,j);//
         }
       }
         
@@ -282,7 +282,7 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i][j] = B_data[j*(order_num+1)+i];//_position0(i,j);
+          vrtx2[i][j] = B_data[j*(order_num+1)+i];//_position0(i,j);//
         }
       }
       
@@ -293,7 +293,7 @@ class CCD
         
         for(int j=0; j<3; j++) 
         {
-          vrtx2[i+order_num+1][j] = B_data[j*(order_num+1)+i];//_position1(i,j);
+          vrtx2[i+order_num+1][j] = B_data[j*(order_num+1)+i];//_position1(i,j);//
         }
       }
         
@@ -343,6 +343,8 @@ class CCD
       double gjk_distance2=c0[0]*c0[0]+c0[1]*c0[1]+c0[2]*c0[2];
       // Print distance between objects. 
       //printf ("Distance between bodies %i\n", intersection);
+      //std::cout.precision(17);
+      //std::cout<<gjk_distance2<<"\n"<<std::flush;
       return gjk_distance2 <= d*d;
     }
 
@@ -561,79 +563,7 @@ class CCD
       //return KDOPConvexCollision<double,3>::hasCollision(A,_position,d);
 
     }
-  
-    static bool KDOPCCD_point(Data position, Data direction, Data _position,  double d, double tMin, double tMax)
-    {
-      Data A(2*(order_num+1),3);
-      A<<position+tMin*direction,position+tMax*direction;
-      
-      int dim = kdop_axis.size();
-      double level;
-      for(int k=0;k<dim;k++)
-      {
-        double upperA=-INFINITY;
-        double lowerA=INFINITY;
-        for(int i=0;i<2*(order_num+1);i++)
-        {
-          level = kdop_axis[k].dot(A.row(i));
-          if(level<lowerA)
-            lowerA=level;
-          if(level>upperA)
-            upperA=level;
-        }
-
-        double upperB=-INFINITY;
-        double lowerB=INFINITY;
-    
-        level = kdop_axis[k].dot(_position.row(0));
-        lowerB=level;
-        upperB=level;
-        
-        if(upperB<lowerA-d || upperA<lowerB-d)
-          return false;
-      }
-      return true;
-      
-      //return KDOPConvexCollision<double,3>::hasCollision(A,_position,d);
-
-    }
-
-    static bool KDOPDCD_point(Data position, Data _position,  double d)
-    {
-      Data A((order_num+1),3);
-      A<<position;
-      
-      int dim = kdop_axis.size();
-      double level;
-      for(int k=0;k<dim;k++)
-      {
-        double upperA=-INFINITY;
-        double lowerA=INFINITY;
-        for(int i=0;i<(order_num+1);i++)
-        {
-          level = kdop_axis[k].dot(A.row(i));
-          if(level<lowerA)
-            lowerA=level;
-          if(level>upperA)
-            upperA=level;
-        }
-
-        double upperB=-INFINITY;
-        double lowerB=INFINITY;
-     
-        level = kdop_axis[k].dot(_position.row(0));
-        lowerB=level;
-        upperB=level;
-
-        if(upperB<lowerA-d || upperA<lowerB-d)
-          return false;
-      }
-      return true;
-      
-      //return KDOPConvexCollision<double,3>::hasCollision(A,_position,d);
-
-    }
-
+ 
 };
 
 PRJ_END

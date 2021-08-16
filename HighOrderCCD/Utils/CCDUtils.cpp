@@ -27,6 +27,12 @@ std::vector<double> time_weight;
 double whole_weight;
 std::vector<Eigen::MatrixXd> convert_list;
 
+std::vector<std::vector<std::vector<bool>>> is_self_seperate;
+std::vector<std::vector<std::vector<Eigen::Vector3d>>> self_seperate_c;
+std::vector<std::vector<std::vector<double>>> self_seperate_d;
+
+bool is_optimal_plane;
+
 double piece_time, kt, ks;
 double vel_limit, acc_limit;
 

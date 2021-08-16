@@ -2,6 +2,7 @@
  "auto": 0,
  "step_choose": 1,
  "init": 1,
+ "optimal_plane": 1,
  "res": 8,
  "vel_limit": 2,
  "acc_limit": 2,

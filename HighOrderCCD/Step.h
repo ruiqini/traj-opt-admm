@@ -114,13 +114,14 @@ class Step
 
     }
     
-    static std::vector<double> self_step( const std::vector<Data>& spline_list,const std::vector<Data>& direction_list, BVH& bvh)
+    static void self_step(const std::vector<Data>& spline_list, const std::vector<Data>& direction_list, 
+                          std::vector<double>& step_list, BVH& bvh)
     {
-        std::vector<double> step_list; step_list.resize(uav_num,1.0);
-
+        step_list.resize(uav_num,1.0);
+        
         for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
-
+            
             int sp_id=std::get<0>(subdivide_tree[tr_id]);
             //double weight=std::get<1>(subdivide_tree[tr_id]).second-std::get<1>(subdivide_tree[tr_id]).first;
             Eigen::MatrixXd basis=std::get<2>(subdivide_tree[tr_id]);
@@ -155,11 +156,23 @@ class Step
 
                 double temp_step0=step_list[p0];
                 double temp_step1=step_list[p1];
-
+               
                 bool is_collided=CCD::SelfKDOPCCD(P0,D0,P1,D1,offset,0,temp_step0, 0, temp_step1);
+                //int ii=0;
                 while(is_collided)
                 {  
                     is_collided= CCD::SelfGJKCCD(P0,D0,P1,D1, offset,0,temp_step0, 0, temp_step1);  //cgal
+                    /*
+                    if(ii>100)
+                    {
+                        std::cout<<temp_step0<<" "<< temp_step1<<"\n"<<std::flush;
+                        is_collided= CCD::SelfGJKCCD(P0,D0,P1,D1, offset,0,temp_step0, 0, temp_step1); 
+                        std::cout<<is_collided<<" "<<tr_id<<" "<<p0<<" "<<p1<<"\n"<<std::flush;
+                        double a;
+                        std::cin>>a;
+                    }
+                    ii++;
+                    */
                     if(is_collided)
                     {
                         temp_step0*=0.8;
@@ -171,7 +184,7 @@ class Step
             }
         }
 
-        return step_list;
+        //return step_list;
 
     }
     

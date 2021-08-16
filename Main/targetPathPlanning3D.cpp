@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
   automove = j["auto"].get<int>();
   step_choose = j["step_choose"].get<int>();
 
+  is_optimal_plane=j["optimal_plane"].get<int>();
+
+
   //int init_spline=j["init"].get<int>();
   
   offset = j["offset"].get<double>();
@@ -249,6 +252,22 @@ int main(int argc, char *argv[])
       }
     }
   }
+
+  is_self_seperate.resize(piece_num*res);
+  self_seperate_c.resize(piece_num*res);
+  self_seperate_d.resize(piece_num*res);
+  for(int i=0;i<piece_num*res;i++)
+  {
+    is_self_seperate[i].resize(uav_num);
+    self_seperate_c[i].resize(uav_num);
+    self_seperate_d[i].resize(uav_num);
+    for(int j=0;j<uav_num;j++)
+    {
+      is_self_seperate[i][j].resize(uav_num,false);
+      self_seperate_c[i][j].resize(uav_num);
+      self_seperate_d[i][j].resize(uav_num);
+    }
+  }
   
   std::cout<<"before bvh init\n";
   BVH bvh;
@@ -363,12 +382,9 @@ int main(int argc, char *argv[])
 
         }
       
-        if(tnorm<stop && is_write)
+        if(iter>1 && tnorm<stop && is_write)
         {
-          if(optimize_time)
-          {
-            if(adaptive_change)
-            {
+          
               is_write = false;
               result_file<<iter<<std::endl;
               result_file<<whole_time<<std::endl;
@@ -382,24 +398,6 @@ int main(int argc, char *argv[])
               else
                 automove=false;
 
-            }
-
-            adaptive_change=true;
-
-          }
-          else
-          {
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            //result_file<<spline<<std::endl;
-
-          
-            optimize_time=true;
-          }
-          
-          
         }
         
         if(iter<turns||automove)
@@ -466,6 +464,7 @@ int main(int argc, char *argv[])
                                                 p_slack_list, t_slack_list, 
                                                 p_lambda_list, t_lambda_list,
                                                 face_list, bvh);
+              
           }
 
           draw_size=draw_tree_list[0].size();

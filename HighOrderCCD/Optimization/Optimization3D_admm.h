@@ -117,6 +117,7 @@ public:
                 if(Separate::opengjk(P, _position, offset+margin,
                                       c, d))//cgal
                 {
+          
                   c_lists[tr_id].push_back(c);
                   d_lists[tr_id].push_back(d);
                 }

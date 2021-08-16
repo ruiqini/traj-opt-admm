@@ -134,6 +134,9 @@ class Separate
       }
 
       d-=offset;
+      
+      
+      //Optimal_plane::optimal_cd(position,  _position, c, d);
       //std::cout<<c<<"\n"<<d<<"\n\n";
       return true;
       
@@ -266,7 +269,11 @@ class Separate
       
       d=0.5*(d0+d1);
 
-      Optimal_plane::optimal_d(position, _position, c, d0, d1, d);
+      //Optimal_plane::optimal_d(position, _position, c, d0, d1, d);
+
+      //Optimal_plane::self_optimal_cd(position,  _position, 
+      //                               c,  d);
+      
       //std::cout<<"d01:"<<d0<<" "<<d1<<"\n";
 
       //d1+=offset;

@@ -217,13 +217,15 @@ class Gradient_admm
             g_t+=mu*(piece_time-t_slack(sp_id)) + t_lambda(sp_id);
             h_t+=mu;
         }
-
+        
 
         int n=3*trajectory_num;
         
         grad.resize(n+1); grad.setZero();
         grad.head(n)=g0;
         grad(n)=g_t;
+        
+          
 
         hessian.resize(n+1,n+1); hessian.setZero();
         hessian.block(0,0,n,n)=h0;
@@ -370,7 +372,7 @@ class Gradient_admm
                         P_data[j+2*(order_num+1)]*c_data[2] +d_list[k];
 
                     if(d<margin)
-                    { 
+                    {  
                        
                         //std::cout<<A<<"\n";
                        Eigen::MatrixXd d_x; d_x.noalias()=A_list[tr_id][j]* c_list[k];//A * c_list[k];

@@ -126,6 +126,8 @@ int main(int argc, char *argv[])
   automove = j["auto"].get<int>();
   step_choose = j["step_choose"].get<int>();
 
+  is_optimal_plane=j["optimal_plane"].get<int>();
+
   int init_spline=j["init"].get<int>();
   
   offset = j["offset"].get<double>();
