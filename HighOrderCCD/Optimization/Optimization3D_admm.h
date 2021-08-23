@@ -112,20 +112,83 @@ public:
 
               Eigen::Vector3d c;
               double d;
-              if(CCD::KDOPDCD(P, _position,offset+margin))
+              if(CCD::KDOPDCD(P, _position,offset+ margin))
               {
                 if(Separate::opengjk(P, _position, offset+margin,
-                                      c, d))//cgal
+                                        c, d))//cgal
                 {
           
                   c_lists[tr_id].push_back(c);
                   d_lists[tr_id].push_back(d);
                 }
+                /*
+                if(is_optimal_plane)
+                {
+                  if(is_seperate[tr_id][ob_id]==false)
+                  {
+                    if(Separate::opengjk(P, _position, offset+ margin,
+                                         c, d))
+                    {
+                      seperate_c[tr_id][ob_id]=c; 
+                      seperate_d[tr_id][ob_id]=d;
+                      is_seperate[tr_id][ob_id]=true;
+
+                      //c_lists[tr_id].push_back(c);
+                      //d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
+                      
+                    }
+                  }
+                  
+                  else
+                  {
+                    c=seperate_c[tr_id][ob_id]; 
+                    d=seperate_d[tr_id][ob_id];
+                    Optimal_plane::optimal_cd(P,  _position, 
+                                              c,  d);
+                    seperate_c[tr_id][ob_id]=c; 
+                    seperate_d[tr_id][ob_id]=d;
+
+                    c_lists[tr_id].push_back(c);
+                    d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
+                  }
+                  
+                }
+                else
+                {
+                  if(Separate::opengjk(P, _position, offset+margin,
+                                        c, d))//cgal
+                  {
+            
+                    c_lists[tr_id].push_back(c);
+                    d_lists[tr_id].push_back(d-0.5*offset);
+                  }
+                }
+                */
               }
 
 
-            }     
+            } 
+            /* 
+            if(is_optimal_plane)
+                for(int ob_id=0;ob_id<(int)face_list.size();ob_id++)
+                {
+                  if(is_seperate[tr_id][ob_id]==true)
+                  {
+                    Eigen::Vector3d c;
+                    double d;
+                    Eigen::Matrix3d _position=face_list[ob_id];
+                      c=seperate_c[tr_id][ob_id]; 
+                      d=seperate_d[tr_id][ob_id];
+                      Optimal_plane::optimal_cd(P,  _position, 
+                                              c,  d);
+                      seperate_c[tr_id][ob_id]=c; 
+                      seperate_d[tr_id][ob_id]=d;
 
+                      c_lists[tr_id].push_back(c);
+                      d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
+                  }                  
+                }   
+           */
         }
 
   }
@@ -421,11 +484,11 @@ public:
    
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
-    
+    /*
     std::cout<<"gn:"<<ng0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl<<std::endl;
-    
+    */
     gnorm=ng0.norm();
 
     return 1;
@@ -475,12 +538,13 @@ public:
     
 
     max_step=step;
-    
+    /*
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
                " "<<lambda*Energy::plane_barrier_energy(spline+step*direction,c_lists,d_lists)<<
                " "<<lambda*Energy::bound_energy(spline+step*direction,piece_time)<<
                " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
+               */
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
 

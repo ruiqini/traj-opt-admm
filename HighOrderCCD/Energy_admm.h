@@ -112,9 +112,19 @@ class Energy_admm
             //Eigen::MatrixXd P; P.noalias()=basis*bz;
             std::vector<Eigen::RowVector3d> P;
             P.resize(order_num+1);
+            double* basis_data=basis.data();
+            double* bz_data=bz.data();
             for(int j=0;j<=order_num;j++)
             {
-                P[j]=basis.row(j)*bz;
+                double x=0,y=0,z=0;
+                for(int j0=0;j0<=order_num;j0++)
+                {
+                    x+=basis_data[j0*(order_num+1)+j]*bz_data[j0];
+                    y+=basis_data[j0*(order_num+1)+j]*bz_data[j0+(order_num+1)];
+                    z+=basis_data[j0*(order_num+1)+j]*bz_data[j0+2*(order_num+1)];
+                }
+                P[j]<<x,y,z;
+                //P[j]=basis.row(j)*bz;
             }
             double d;
            

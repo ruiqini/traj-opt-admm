@@ -485,6 +485,16 @@ int main(int argc, char *argv[])
       }
     }
   }  
+
+  is_seperate.resize(piece_num*res);
+  seperate_c.resize(piece_num*res);
+  seperate_d.resize(piece_num*res);
+  for(int i=0;i<piece_num*res;i++)
+  {
+    is_seperate[i].resize(face_list.size());
+    seperate_c[i].resize(face_list.size());
+    seperate_d[i].resize(face_list.size());
+  }
   
   //std::cout<<F_<<std::endl;
   

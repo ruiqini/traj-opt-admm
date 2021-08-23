@@ -113,10 +113,10 @@ class Optimal_plane
               d=d0;
               tmp=-_position.row(i);
             }
-            else if(d==d0)
+            else if(d==d0 && iter%2==0)
             {
-              //id=id+1;
-              //tmp=-_position.row(i);
+              id=id+1;
+              tmp=-_position.row(i);
             }
             
             //tmp_p[i]=-_position.row(i);
@@ -266,6 +266,228 @@ class Optimal_plane
       std::cout<<"??\n";
     }
     */
+    
+    static double barrier_energy(const Data& position, const Data & _position, 
+                         Eigen::Vector3d& c, double& d)
+    {
+      double energy=0;
+      double dist;
+      
+        for(int j=0;j<position.rows();j++)
+        {
+            //d=P[j].dot(c_list[k])+d_list[k];
+            dist=position.row(j).dot(c)+d-0.5*offset;
+            if(dist<=0)
+            {
+                return INFINITY;
+            }
+            if(dist<margin)
+            { 
+                energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
+
+            }
+        }
+        double mar=margin;
+        for(int j=0;j<_position.rows();j++)
+        {
+            dist=-_position.row(j).dot(c)-d-0.5*offset;
+            if(dist<=0)
+            {
+                return INFINITY;
+            }
+            if(dist<mar)
+            { 
+                energy+=-(dist-mar)*(dist-mar)*log(dist/mar); 
+               
+            }
+        }
+        return energy;
+
+    }
+
+    static void barrier_grad(const Data& position, const Data & _position, 
+                                  Eigen::Vector3d& c, Eigen::Vector3d& c0, Eigen::Vector3d& c1, double& d,
+                                  Eigen::Vector3d& grad, Eigen::Matrix3d& hessian)
+    {
+        double dist;
+        Eigen::Matrix3d tmp_h;
+        double p_c,p_c0,p_c1;
+
+        //double mar=margin;
+        for(int j=0;j<position.rows();j++)
+        {
+            //d=P[j].dot(c_list[k])+d_list[k];
+            dist=position.row(j).dot(c)+d-0.5*offset;
+            if(dist<margin)
+            { 
+                //energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
+                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);  
+                p_c=position.row(j).dot(c);
+                p_c0=position.row(j).dot(c0);
+                p_c1=position.row(j).dot(c1);
+
+                double e1=-(2*(dist-margin)*log(dist/margin)+(dist-margin)*(dist-margin)/dist);
+
+                double e2=-(2*log(dist/margin)+4*(dist-margin)/dist-(dist-margin)*(dist-margin)/(dist*dist)); 
+                
+                grad(0)+=e1*p_c0;
+                grad(1)+=0;//e1*p_c1;
+                grad(2)+=e1;
+
+                tmp_h<<e2*p_c0*p_c0-e1*p_c,   e1*p_c1,  e2*p_c0,
+                          e1*p_c1,            0,         0,
+                          e2*p_c0,            0,        e2;
+                hessian+=tmp_h;
+                
+               
+            }
+        }
+
+        double mar=margin;
+        for(int j=0;j<_position.rows();j++)
+        {
+            dist=-_position.row(j).dot(c)-d-0.5*offset;
+            if(dist<mar)
+            { 
+                //energy+=-(dist-margin)*(dist-margin)*log(dist/margin); 
+                //energy+=weight*(1-d/margin*d/margin)*(1-d/margin*d/margin);  
+
+                p_c=-_position.row(j).dot(c);
+                p_c0=-_position.row(j).dot(c0);
+                p_c1=-_position.row(j).dot(c1); 
+
+                double e1=-(2*(dist-mar)*log(dist/mar)+(dist-mar)*(dist-mar)/dist);
+
+                double e2=-(2*log(dist/mar)+4*(dist-mar)/dist-(dist-mar)*(dist-mar)/(dist*dist)); 
+                
+                grad(0)+=e1*p_c0;
+                grad(1)+=0;//e1*p_c1;
+                grad(2)+=-e1;
+               
+                tmp_h<<e2*p_c0*p_c0-e1*p_c,   e1*p_c1,  -e2*p_c0,
+                          e1*p_c1,            0,         0,
+                          -e2*p_c0,            0,        e2;
+                hessian+=tmp_h;
+                
+             
+            }
+        }
+
+    }
+
+    static void optimal_cd(const Data& position, const Data & _position, 
+                             Eigen::Vector3d& c, double& d) //order_num+1, order_num+1
+    {      
+      Eigen::Vector3d c0, c1, temp_c;
+
+      Eigen::Matrix3d hessian;
+      Eigen::Vector3d grad, tmp_g;
+
+      double theta, phi; // [-Pi/2,Pi/2] [-Pi/2,Pi/2]
+      
+      double step;
+      while(true)
+      //for(int kk=0;kk<200;kk++)
+      {
+
+        c0(0)=c(1); c0(1)=-c(0); c0(0)=0;
+        c0.normalize();
+
+        c1=c0.cross(c);
+
+        theta=0;
+        phi=0;
+
+        hessian.setZero();
+        grad.setZero();
+
+        barrier_grad( position, _position, 
+                           c,  c0,  c1,  d,
+                           grad,  hessian);
+
+        //std::cout<<grad.norm()<<" ";
+        if(grad.norm()<1e-2)
+          break;
+        Eigen::LLT<Eigen::Matrix3d> solver; 
+        Eigen::Matrix3d I; I.setIdentity();
+
+        solver.compute(hessian);
+        //std::cout<<hessian<<"\n";
+        if(solver.info() == Eigen::NumericalIssue)//50
+        {
+          
+          Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(hessian);
+          Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
+          if(eigenvalue(0)<0)
+          {
+            hessian=hessian-eigenvalue(0)*I+1e-8*I;
+          }
+          solver.compute(hessian);
+
+        }
+       
+
+        //std::cout<<hessian<<"\n\n";
+        double e0,e1;
+        double tmp_d, tmp_theta, tmp_phi;
+        Eigen::Vector3d tmp_c;
+        
+        
+       
+        
+        Eigen::Vector3d direction=-solver.solve(grad);
+        //Eigen::Vector3d direction=-grad;
+        //double w= -grad.dot(direction);
+        double w= -grad.dot(direction);
+
+        //std::cout<<w<<" direction:"<<direction.transpose()<<"\n";
+
+        step=1.0;
+        if(std::abs(direction(0))>0.5*M_PI || std::abs(direction(1))> 0.5*M_PI)
+        {
+          step=0.95*std::min(0.5*std::abs(M_PI/direction(0)),0.5*std::abs(M_PI/direction(1)));
+        }
+        //std::cout<<"step:"<<step<<"\n";
+        tmp_c=current_c(c,  c0,  c1,
+                          theta,  phi);
+        tmp_d=d;
+        tmp_theta=theta;
+        tmp_phi=phi;
+        e0=barrier_energy(position, _position, 
+                                 tmp_c,  tmp_d);
+        tmp_theta= theta+step*direction(0);    
+        tmp_phi=phi+step*direction(1);
+        tmp_c=current_c(c,  c0,  c1,
+                       tmp_theta,  tmp_phi);  
+        tmp_d=d+step*direction(2);                 
+        e1=barrier_energy(position, _position, 
+                                 tmp_c,  tmp_d);
+         
+
+        while(e0-1e-4*w*step< e1)
+        {
+          step*=0.8;
+          
+          tmp_theta= theta+step*direction(0);    
+          tmp_phi=phi+step*direction(1);
+          tmp_c=current_c(c,  c0,  c1,
+                          tmp_theta,  tmp_phi);   
+          tmp_d=d+step*direction(2);                       
+          e1=barrier_energy(position, _position, 
+                                 tmp_c,  tmp_d);
+        }
+        //std::cout<<kk<<" "<<grad.norm()<<" "<<step<<" "<<e1<<"\n";
+        
+        c=tmp_c;
+        d=tmp_d;
+        //std::cout<<hessian<<"\n\n"<<std::flush;
+        //std::cout<<grad<<"\n\n"<<std::flush;
+        //std::cout<<c.transpose()<< " "<<d<<"\n\n"<<std::flush;
+        
+
+      }
+      //std::cout<<"\n";
+    }
     
     static double self_barrier_energy(const Data& position, const Data & _position, 
                          Eigen::Vector3d& c, double& d)

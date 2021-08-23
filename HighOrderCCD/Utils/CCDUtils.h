@@ -62,6 +62,10 @@ extern std::vector<std::vector<std::vector<bool>>> is_self_seperate;
 extern std::vector<std::vector<std::vector<Eigen::Vector3d>>> self_seperate_c;
 extern std::vector<std::vector<std::vector<double>>> self_seperate_d;
 
+extern std::vector<std::vector<bool>> is_seperate;
+extern std::vector<std::vector<Eigen::Vector3d>> seperate_c;
+extern std::vector<std::vector<double>> seperate_d;
+
 extern bool is_optimal_plane;
 
 extern double kt, ks;// time s

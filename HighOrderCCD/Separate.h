@@ -123,18 +123,29 @@ class Separate
       }
       */
       double *c_data=c.data();
-      d=INFINITY;
+      double d0=INFINITY;
       for(int i=0;i<3;i++)
       {
-        double d0=-c_data[0]*B_data[i]
+        double d_=-c_data[0]*B_data[i]
                   -c_data[1]*B_data[3+i]
                   -c_data[2]*B_data[6+i];//-c.dot(_position.row(i));
-        if(d>d0)
-          d=d0;
+        if(d0>d_)
+          d0=d_;
       }
-
-      d-=offset;
+      /*
+      double d1=-INFINITY;
       
+      for(int i=0;i<order_num+1;i++)
+      {
+        double d_=-c.dot(position.row(i));
+        if(d1<d_)
+          d1=d_;
+      }
+      */
+      //d=0.5*(d0+d1);
+      d=d0-offset;//0.5*
+      //d-=offset;
+      //d-=0.5*offset;
       
       //Optimal_plane::optimal_cd(position,  _position, c, d);
       //std::cout<<c<<"\n"<<d<<"\n\n";
