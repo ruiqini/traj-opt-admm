@@ -481,9 +481,50 @@ int main(int argc, char *argv[])
       }
     }
   }  
+
+  automove=true;
+
+  while(iter<num) 
+  {
+    
+    if(iter>1 && gnorm<stop)
+    {
+      
+          result_file<<iter<<std::endl;
+          result_file<<whole_time<<std::endl;
+          result_file<<gnorm<<std::endl;
+          result_file<<V.rows()<<" "<<F.rows()<<std::endl;
+          result_file<<spline<<std::endl;
+          result_file<<piece_time<<std::endl;
+
+          if(if_exit)
+            exit(0);
+          else
+            automove=false;
+          break;
+          //log_data(mesh_file, spline, piece_time);
+    }
+    
+    if(iter<turns||automove)
+    {
+
+      clock_t time0 = clock();
+      std::cout<<"iter: "<<iter<<std::endl;
+          
+      
+       Optimization3D_am::optimization(spline, piece_time, 
+                                          vertex_list, bvh);
+  
+      clock_t time1 = clock();
+      whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
+      std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+      //std::cout<<p0.size()<<std::endl;
+      iter++;
+    }
+  }
   
   //std::cout<<F_<<std::endl;
-  
+  /*
   Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IR(640,800);
   Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IG(640,800);
   Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IB(640,800);
@@ -623,12 +664,7 @@ int main(int argc, char *argv[])
         
         if(iter>1 && gnorm<stop && is_write)
         {
-          /*
-          if(optimize_time)
-          {
-            if(adaptive_change)
-            {
-              */
+          
               is_write = false;
               result_file<<iter<<std::endl;
               result_file<<whole_time<<std::endl;
@@ -643,24 +679,7 @@ int main(int argc, char *argv[])
                 automove=false;
               
               log_data(mesh_file, spline, piece_time);
-            /*
-            }
-
-            adaptive_change=true;
-
-          }
-          else
-          {
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            result_file<<spline<<std::endl;
-
-          
-            optimize_time=true;
-          }
-          */
+            
           
         }
         
@@ -688,7 +707,7 @@ int main(int argc, char *argv[])
   viewer.callback_key_down = key_down;
  
   viewer.launch();
-
+  */
   #endif
   return 0;
 }
