@@ -274,18 +274,14 @@ int main(int argc, char *argv[])
   clock_t time1 = clock();
   if(if_init_ob)
   {
-    bvh.InitObstacle(V,F);
+    bvh.InitPointcloud(V);
   }
     
-  std::vector<Eigen::Matrix3d> face_list;
-  face_list.resize(F.rows());
-  for(int i=0;i<(int)face_list.size();i++)
-  {
-    int f0=F(i,0); int f1=F(i,1); int f2=F(i,2);
-              
-    Eigen::Matrix3d _position;
-    _position<<V.row(f0),V.row(f1),V.row(f2);
-    face_list[i]=_position;
+  std::vector<Eigen::RowVector3d> vertex_list;
+  vertex_list.resize(V.rows());
+  for(int i=0;i<(int)vertex_list.size();i++)
+  {              
+    vertex_list[i]=V.row(i);
   }
   
   clock_t time2 = clock();
@@ -463,7 +459,7 @@ int main(int argc, char *argv[])
                                                 spline_list, piece_time_list, 
                                                 p_slack_list, t_slack_list, 
                                                 p_lambda_list, t_lambda_list,
-                                                face_list, bvh);
+                                                vertex_list, bvh);
               
           }
 

@@ -19,7 +19,7 @@ class Step
 
   
     static double position_step(const Data& spline, const Data& direction, 
-                                const std::vector<Eigen::Matrix3d>& face_list,
+                                const std::vector<Eigen::RowVector3d>& vertex_list,
                                 BVH& bvh)
     {
         double step;
@@ -83,7 +83,7 @@ class Step
 
                 //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
                 
-                Eigen::Matrix3d _position=face_list[ob_id];
+                Eigen::RowVector3d _position=vertex_list[ob_id];
                 //_position<<V.row(f0),V.row(f1),V.row(f2);
 
                                                     

@@ -69,7 +69,27 @@ class Optimal_plane
       }
       //std::cout<<"\n";
     }
-    /*
+
+
+    static Eigen::Vector3d current_c(const Eigen::Vector3d& c, const Eigen::Vector3d& c0, const Eigen::Vector3d& c1,
+                                     const double& theta, const double& phi)
+    {
+         Eigen::Vector3d temp_c=std::cos(theta)*c+std::sin(theta)*(std::cos(phi)*c0+std::sin(phi)*c1);
+         //temp_c.normalize();
+         return temp_c;
+    }
+
+    static double current_d(const Eigen::Vector3d& c, const Data & _position)
+    {
+        //double *c_data=c.data();
+        
+        double d=-c.dot(_position.row(0));
+        
+
+        d-=offset;
+        return d;
+    }
+    
     static double barrier_energy(const Data& position, const Data & _position, 
                                  Eigen::Vector3d& c, double& d)
     {
@@ -102,28 +122,13 @@ class Optimal_plane
         double dist;
         Eigen::Matrix2d tmp_h;
         double p_c,p_c0,p_c1;
-        d=INFINITY;
+        //d=INFINITY;
         Eigen::RowVector3d tmp;
-        double id=0;
-        for(int i=0;i<3;i++)
-        {
-            double d0=-c.dot(_position.row(i));
-            if(d>d0)
-            {
-              d=d0;
-              tmp=-_position.row(i);
-            }
-            else if(d==d0 && iter%2==0)
-            {
-              id=id+1;
-              tmp=-_position.row(i);
-            }
-            
-            //tmp_p[i]=-_position.row(i);
-        }
+        
+        tmp=-_position;
         //tmp/=id+1;
         
-        d-=offset;
+        //d-=offset;
         
         for(int j=0;j<position.rows();j++)
         {
@@ -167,10 +172,11 @@ class Optimal_plane
       //for(int kk=0;kk<200;kk++)
       {
 
-        c0(0)=c(1); c0(1)=-c(0); c0(0)=0;
+        c0(0)=c(1); c0(1)=-c(0); c0(2)=0;
         c0.normalize();
 
         c1=c0.cross(c);
+        c1.normalize();
 
         theta=0;
         phi=0;
@@ -181,9 +187,19 @@ class Optimal_plane
         barrier_grad( position, _position, 
                       c,  c0,  c1,  d,
                       grad,  hessian);
+        
+        if(grad.norm()<1e-2)
+        {
+          d=current_d(c, _position);
+          //std::cout<<"BREAK:"<<c.norm()<<" "<<c.transpose()<<" "<<d<<"\n";
+
+          break; 
+        }
+        
+
         Eigen::LLT<Eigen::Matrix2d> solver; 
         Eigen::Matrix2d I; I.setIdentity();
-
+        hessian=hessian+1e-2*I; 
         solver.compute(hessian);
         //std::cout<<hessian<<"\n";
         if(solver.info() == Eigen::NumericalIssue)//50
@@ -199,7 +215,7 @@ class Optimal_plane
 
         }
        
-
+   
         //std::cout<<hessian<<"\n\n";
         double e0,e1;
         double tmp_d, tmp_theta, tmp_phi;
@@ -229,10 +245,10 @@ class Optimal_plane
         tmp_phi=phi+step*direction(1);
         tmp_c=current_c(c,  c0,  c1,
                        tmp_theta,  tmp_phi);  
-        //tmp_d=d+step*direction(2);                 
+        tmp_d=current_d(tmp_c, _position);                   
         e1=barrier_energy(position, _position, 
                                  tmp_c,  tmp_d);
-         
+        //std::cout<<c.norm()<<" "<<c.transpose()<<" "<<d<<"\n"; 
 
         while(e0-1e-4*w*step< e1)
         {
@@ -242,31 +258,41 @@ class Optimal_plane
           tmp_phi=phi+step*direction(1);
           tmp_c=current_c(c,  c0,  c1,
                           tmp_theta,  tmp_phi);   
-          //tmp_d=d+step*direction(2);                       
+          tmp_d=current_d(tmp_c, _position);                       
           e1=barrier_energy(position, _position, 
                                  tmp_c,  tmp_d);
         }
+        /*
         std::cout<<position<<"\n\n";
         std::cout<<_position<<"\n\n";
         std::cout<<e0<<" "<<e1<<" "<<grad.norm()<<"\n";
+        std::cout<<step<<" "<<tmp_theta<<" "<<tmp_phi<<"\n";
+        std::cout<<tmp_c.transpose()<<"\n";
+        */
         //std::cout<<kk<<" "<<grad.norm()<<" "<<step<<" "<<e1<<"\n";
         c=tmp_c;
         d=current_d(c, _position);
+        /*
+        if(std::isnan(d))
+        {
+          std::cout<<"err "<<c.transpose()<<" "<<d<<"\n";
+          double t;
+          std::cin>>t;
+        }
 
         std::cout<<c.transpose()<<" "<<d<<"\n";
-
+        */
         
-        if(grad.norm()<1e-1)
-          break; 
-        //if(std::abs((e1-e0))<1e-1)
-        //   break;
+        
+        if(std::abs((e1-e0)/e0)<1e-1)
+           break;
         //if(std::abs((e1-e0)/e0)<1e-4)
         //    break;
       }
-      std::cout<<"??\n";
+      //std::cout<<"??\n";
     }
-    */
     
+    /*
     static double barrier_energy(const Data& position, const Data & _position, 
                          Eigen::Vector3d& c, double& d)
     {
@@ -488,7 +514,7 @@ class Optimal_plane
       }
       //std::cout<<"\n";
     }
-    
+    */
     static double self_barrier_energy(const Data& position, const Data & _position, 
                          Eigen::Vector3d& c, double& d)
     {
@@ -591,30 +617,6 @@ class Optimal_plane
 
     }
 
-    static Eigen::Vector3d current_c(const Eigen::Vector3d& c, const Eigen::Vector3d& c0, const Eigen::Vector3d& c1,
-                                     const double& theta, const double& phi)
-    {
-         Eigen::Vector3d temp_c=std::cos(theta)*c+std::sin(theta)*(std::cos(phi)*c0+std::sin(phi)*c1);
-         return temp_c;
-    }
-
-    static double current_d(const Eigen::Vector3d& c, const Data & _position)
-    {
-        //double *c_data=c.data();
-        double d=INFINITY;
-        for(int i=0;i<3;i++)
-        {
-          double d0=-c.dot(_position.row(i));
-          if(d>d0)
-            d=d0;
-        }
-
-        d-=offset;
-        return d;
-    }
-
-    
-
     static void self_optimal_cd(const Data& position, const Data & _position, 
                              Eigen::Vector3d& c, double& d) //order_num+1, order_num+1
     {      
@@ -630,10 +632,11 @@ class Optimal_plane
       //for(int kk=0;kk<200;kk++)
       {
 
-        c0(0)=c(1); c0(1)=-c(0); c0(0)=0;
+        c0(0)=c(1); c0(1)=-c(0); c0(2)=0;
         c0.normalize();
 
         c1=c0.cross(c);
+        c1.normalize();
 
         theta=0;
         phi=0;

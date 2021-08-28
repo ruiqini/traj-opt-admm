@@ -125,7 +125,7 @@ void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_p
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pair=ob_tree.query(convex, margin);
+        collision_pair=pc_tree.query(convex, margin);
 
 }
 
@@ -170,7 +170,7 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pairs.push_back(ob_tree.query(convex, margin));
+        collision_pairs.push_back(pc_tree.query(convex, margin));
     }
     
 }
@@ -228,7 +228,7 @@ void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<st
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pairs.push_back(ob_tree.query(convex, margin));
+        collision_pairs.push_back(pc_tree.query(convex, margin));
     }
 }
 

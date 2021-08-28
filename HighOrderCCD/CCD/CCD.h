@@ -35,7 +35,7 @@ class CCD
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
       nvrtx1 = order_num+1;
-      nvrtx2 = 3;
+      nvrtx2 = 1;
       
       const double *A_data=position.data();  
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
@@ -134,7 +134,7 @@ class CCD
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
       nvrtx1 = 2*(order_num+1);
-      nvrtx2 = 3;
+      nvrtx2 = 1;
 
       const double *A_data=position0.data(); 
 
@@ -379,16 +379,24 @@ class CCD
 
         double upperB=-INFINITY;
         double lowerB=INFINITY;
-        for(int i=0;i<3;i++)
+        /*
+        for(int i=0;i<1;i++)
         {
           level = x*B_data[i] +
-                  y*B_data[i+3]+
-                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+                  y*B_data[i+1]+
+                  z*B_data[i+2];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
             upperB=level;
         }
+        */
+        level = x*B_data[0] +
+                y*B_data[1] +
+                z*B_data[2];
+        lowerB=level;
+        upperB=level;
+        
         if(upperB<lowerA-d || upperA<lowerB-d)
           return false;
       }
@@ -431,16 +439,24 @@ class CCD
 
         double upperB=-INFINITY;
         double lowerB=INFINITY;
-        for(int i=0;i<3;i++)
+        /*
+        for(int i=0;i<1;i++)
         {
           level = x*B_data[i] +
-                  y*B_data[i+3]+
-                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+                  y*B_data[i+1]+
+                  z*B_data[i+2];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
             upperB=level;
         }
+        */
+        level = x*B_data[0] +
+                y*B_data[1] +
+                z*B_data[2];
+        lowerB=level;
+        upperB=level;
+
         if(upperB<lowerA-d || upperA<lowerB-d)
           return false;
       }
