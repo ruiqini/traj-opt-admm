@@ -34,7 +34,9 @@ class CCD
       
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
-      nvrtx1 = order_num+1;
+      int rows=position.rows();
+
+      nvrtx1 = rows;
       nvrtx2 = 1;
       
       const double *A_data=position.data();  
@@ -356,6 +358,7 @@ class CCD
       const double *B_data=_position.data();
       double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
+      int rows=position.rows();
       double level;
       double x,y,z;
       for(int k=0;k<dim;k++)
@@ -366,11 +369,11 @@ class CCD
 
         double upperA=-INFINITY;
         double lowerA=INFINITY;
-        for(int i=0;i<(order_num+1);i++)
+        for(int i=0;i<rows;i++)
         {
           level = x*A_data[i] +
-                  y*A_data[i+(order_num+1)]+
-                  z*A_data[i+2*(order_num+1)];//kdop_axis[k].dot(A.row(i));
+                  y*A_data[i+rows]+
+                  z*A_data[i+2*rows];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)

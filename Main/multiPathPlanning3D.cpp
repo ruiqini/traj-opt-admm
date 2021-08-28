@@ -12,6 +12,8 @@ USE_PRJ_NAMESPACE
 
 using json = nlohmann::json;
 
+typedef Eigen::MatrixXd Data;
+
 Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now, int seg_now , int _traj_order) 
 {
     Eigen::Vector3d ret = Eigen::VectorXd::Zero(3);
@@ -36,10 +38,7 @@ int main(int argc, char *argv[])
   #if 0
   
   #else
-
-  typedef Eigen::MatrixXd Data;
-
-  
+ 
   igl::opengl::glfw::Viewer viewer;
   
   viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
@@ -58,7 +57,6 @@ int main(int argc, char *argv[])
   epsilon=j["epsilon"].get<double>();
   margin=j["margin"].get<double>();//d hat
   automove = j["auto"].get<int>();
-  step_choose = j["step_choose"].get<int>();
 
   is_optimal_plane=j["optimal_plane"].get<int>();
 
@@ -80,9 +78,6 @@ int main(int argc, char *argv[])
 
   double whole_time=0;
   
-  adaptive_change=false;
-  optimize_time=false;
-
   int dim = kdop_axis.size();
   kdop_matrix.resize(3, dim);
   for(int k=0;k<dim;k++)
@@ -145,7 +140,6 @@ int main(int argc, char *argv[])
   way_points_list[3].push_back(Eigen::Vector3d(2, 0, 0.4));
   way_points_list[3].push_back(Eigen::Vector3d(2.5, -2, 1));
 
-  max_step=1.0;
 
   combination = Combination<40>::value();
 

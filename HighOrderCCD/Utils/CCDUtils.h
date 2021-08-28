@@ -37,9 +37,8 @@ extern int trajectory_num, piece_num, uav_num;
 extern int res;
 extern int iter;
 extern double epsilon, 
-              distance, 
               margin, 
-              max_step, lambda, wolfe, offset ,
+              lambda, wolfe, offset ,
               gnorm, gtime, tnorm,
               mu;
 
@@ -47,7 +46,7 @@ extern std::vector< std::tuple< int, std::pair<double,double>,
                     Eigen::MatrixXd > > subdivide_tree;
 extern std::vector<std::vector< Eigen::MatrixXd>  > A_list, A_vel_list, A_acc_list;
 /*change to vector<vector<pair<>,matrix>>>*/
-extern bool automove, step_choose, adaptive_change, optimize_time;
+extern bool automove;
 extern std::ofstream  result_file,  init_file;
 
 extern Eigen::MatrixXd M_dynamic;

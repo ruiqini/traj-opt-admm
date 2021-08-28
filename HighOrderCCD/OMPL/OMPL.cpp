@@ -16,21 +16,17 @@ public:
    
     myMotionValidator(ob::SpaceInformation* si, 
                       Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
-      F=_F;
       bvh=&_bvh;
     }
  
     myMotionValidator(const ob::SpaceInformationPtr &si, 
                       Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
-      F=_F;
       bvh=&_bvh;
     }
 
@@ -57,7 +53,7 @@ public:
       std::cout<<edge<<"\n\n";
       std::vector<unsigned int> collision_pair;
         //bvh.CheckCollision(collision_pair,margin);
-      bvh->EdgeCollision(edge, collision_pair,offset);
+      bvh->EdgeCollision(edge, collision_pair,offset+margin);
 
       int collision_size=collision_pair.size();
       std::cout<<collision_size<<"\n\n";
@@ -70,12 +66,9 @@ public:
             //int ob_id=*it;
             int ob_id=collision_pair[i];
 
-            int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
-            
-            Eigen::Matrix3d _position;
-            _position<<V.row(f0),V.row(f1),V.row(f2);
+            Eigen::RowVector3d _position=V.row(ob_id);
 
-            bool is_collided= CCD::GJKDCD(edge,_position, offset);  //cgal
+            bool is_collided= CCD::GJKDCD(edge,_position, offset+margin);  //cgal
             if(is_collided)
             {
                 return !valid;
@@ -100,13 +93,11 @@ public:
     }
     
     Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
     BVH* bvh;
     
 };
 //OMPL
 OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::MatrixXd _V,
-           Eigen::MatrixXi _F,
            BVH& _bvh)
 {
   int dim=lowerBound.size();
@@ -123,7 +114,7 @@ OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::Matrix
   
   _stateInfo=ob::SpaceInformationPtr(new ob::SpaceInformation(_state));
 
-  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_F,_bvh);
+  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_bvh);
   ob::MotionValidatorPtr mv(motion_validator);
   
   _stateInfo->setMotionValidator(mv);//std::make_shared<myMotionValidator>(_stateInfo));
@@ -156,7 +147,6 @@ void OMPL::getPath(std::vector<Eigen::VectorXd> &path) //const const
 
 bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal, 
                       Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
                       BVH& _bvh, int time)//,std::function<bool(const Mesh&)> fn
 {
   ob::ProblemDefinitionPtr prob(new ob::ProblemDefinition(_stateInfo));
@@ -179,7 +169,7 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
   prob->setGoalState(goalState.get());
     
     
-  myMotionValidator mv(_stateInfo,_V,_F,_bvh);
+  myMotionValidator mv(_stateInfo,_V,_bvh);
   std::cout<<"test:"<<mv.checkMotion(startState.get(),goalState.get())<<std::endl;
     /*
     if(goalState->values)

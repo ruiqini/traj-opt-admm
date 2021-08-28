@@ -16,6 +16,9 @@ USE_PRJ_NAMESPACE
 
 using json = nlohmann::json;
 
+typedef Eigen::MatrixXd Data;
+
+
 Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now, int seg_now , int _traj_order) 
 {
     Eigen::Vector3d ret = Eigen::VectorXd::Zero(3);
@@ -91,155 +94,8 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
               igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
 }
 
-int main(int argc, char *argv[])
+void way_point_init(const std::string& mesh_file, Data& spline)
 {
-  if (argc < 2)
-	{
-		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
-		return -1;
-  }
-
-  #if 0
-  
-  #else
-
-  typedef Eigen::MatrixXd Data;
-
-  
-  igl::opengl::glfw::Viewer viewer;
- 
-  viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
-  viewer.core().is_animating = true;
-  viewer.core().camera_zoom = 2.0f;
-  viewer.data().line_width = 1.0f;
-  viewer.data().point_size = 3.0f;
-
-  std::ifstream fin("Config File/3D.json");   
-  json j = json::parse(fin);
-	fin.close();
-
-
-  lambda=j["lambda"].get<double>();
-
-  epsilon=j["epsilon"].get<double>();
-  margin=j["margin"].get<double>();//d hat
-  automove = j["auto"].get<int>();
-  step_choose = j["step_choose"].get<int>();
-
-  is_optimal_plane=j["optimal_plane"].get<int>();
-
-  int init_spline=j["init"].get<int>();
-  
-  offset = j["offset"].get<double>();
-
-  res = j["res"].get<int>();
-
-  int if_exit=j["exit"].get<int>();
-
-  int if_init_ob=j["init_ob"].get<int>();
-
-  double scale=j["scale"].get<double>();
-
-  double stop=j["stop"].get<double>();
-
-  mu=j["mu"].get<double>();
-  //lambda=1.0/margin2;
-
-  double whole_time=0;
-  
-  adaptive_change=false;
-  optimize_time=false;
-  
-  
-  
-  int dim = kdop_axis.size();
-  
-  kdop_matrix.resize(3, dim);
-  for(int k=0;k<dim;k++)
-  {
-    kdop_axis[k].normalize();
-    kdop_matrix.col(k) = kdop_axis[k];
-  }
-
-  aabb_matrix.resize(3, 3);
-  for(int k=0;k<3;k++)
-  {
-    aabb_matrix.col(k) = aabb_axis[k];
-  }
-  //lambda/=epsilon;
-
-  Eigen::MatrixXd V, BV;
-  Eigen::MatrixXi F, BF;
-  
-  const std::string mesh_file = argv[1];
-  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-
-  std::cout<<"before bvh init\n";
-  BVH bvh;
-  clock_t time1 = clock();
-  
-  if(if_init_ob)
-  {
-    bvh.InitPointcloud(V);
-  }
-
-  std::vector<Eigen::RowVector3d> vertex_list;
-  vertex_list.resize(V.rows());
-  for(int i=0;i<(int)vertex_list.size();i++)
-  {              
-    vertex_list[i]=V.row(i);
-  }
-
-  clock_t time2 = clock();
-
-  std::cout<<"time_bvh:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
-  
-  vel_limit=j["vel_limit"].get<double>();;//2
-  acc_limit=j["acc_limit"].get<double>();;//2
-    
-  result_file.open ("result/" +mesh_file + "_result_file_am.txt");
- 
-  double init_time=-INFINITY;
-  Data spline;
-
-  if(init_spline==0)
-  {
-
-    double r=4.0, h=1.0;
-    piece_num=5;
-    trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
-    spline.resize(trajectory_num,3);
-    std::vector<Eigen::Vector3d> way_points;
-    
-    for(int i=0;i<=piece_num;i++)
-    {
-      Eigen::Vector3d p0(r*cos(i*M_PI/3.0),r*sin(i*M_PI/3.0),-(piece_num-i)/double(piece_num)*h+i/double(piece_num)*h);
-      way_points.push_back(p0);
-    }
-    
-    time_weight.resize(piece_num);
-    whole_weight=0;
-    for(int i=0;i<piece_num;i++)
-    {
-      time_weight[i]=1;
-      //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
-      
-      whole_weight+=time_weight[i];
-    }
-
-    spline.row(0)=way_points[0].transpose();
-    for(int i=0;i<piece_num;i++)
-    {
-      for(int j=0;j<=order_num-2;j++)
-      {
-        spline.row(j+i*(order_num-2)+1)=double(order_num-2-j)/(order_num-2)*way_points[i].transpose()
-                                        +(double)j/(order_num-2)*way_points[i+1].transpose();
-      }
-    }
-    spline.row(trajectory_num-1)=way_points[piece_num].transpose();
-  }
-  else if(init_spline==1)
-  {
     std::string line;
     std::ifstream myfile ("init/" +mesh_file + "_init_file.txt");
     //V*=0.5;
@@ -273,10 +129,6 @@ int main(int argc, char *argv[])
       //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
       
       whole_weight+=time_weight[i];
-
-      double temp_time=2.0*(way_points[i+1]-way_points[i]).norm()/vel_limit;//2.0 2.5
-      if(init_time<temp_time)
-         init_time=temp_time;
     }
     
 
@@ -299,40 +151,32 @@ int main(int argc, char *argv[])
     }
     spline.row(trajectory_num-1)=way_points[piece_num].transpose();
 
-  }
-  else if(init_spline==2)
-  {
-    //scale=j["scale"].get<double>();
-    Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
-    Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
-    std::cout<<minV<<"\n";
-    std::cout<<maxV<<"\n";
-    Eigen::VectorXd lowerBound, upperBound;
-    lowerBound=1.2*minV;
-    upperBound=1.2*maxV;
-    OMPL ompl(lowerBound, upperBound,
-               V,F,bvh);
+}
+
+void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, Data& spline)
+{
+      Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
+      Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
+      std::cout<<minV<<"\n";
+      std::cout<<maxV<<"\n";
+      Eigen::VectorXd lowerBound, upperBound;
+      lowerBound=1.2*minV;
+      upperBound=1.2*maxV;
+      OMPL ompl(lowerBound, upperBound,
+                V,bvh);
       
-    std::vector<Eigen::VectorXd> path;
+      std::vector<Eigen::VectorXd> path;
 
-    Eigen::Vector3d start,end;
-    /*
-    start(0)= 4.0000;
-    start(1)= 0;
-    start(2)= 0;
+      Eigen::Vector3d start,end;
+    
+      start(0)= 4;
+      start(1)= 8;
+      start(2)= 3.3;
 
-    end(0)= -4.0000;
-    end(1)= 0;
-    end(2)= 0;
-    */
-    start(0)= 4;
-    start(1)= 8;
-    start(2)= 3.3;
-
-    end(0)= -6;
-    end(1)= -5.5;
-    end(2)= 4.3;
-    Eigen::MatrixXd edge(2,3);
+      end(0)= -6;
+      end(1)= -5.5;
+      end(2)= 4.3;
+      Eigen::MatrixXd edge(2,3);
       edge.row(0)=start.transpose();
       edge.row(1)=end.transpose();
       std::vector<unsigned int> collision_pair;
@@ -342,7 +186,7 @@ int main(int argc, char *argv[])
       int collision_size=collision_pair.size();
       std::cout<<"main:"<<collision_size<<"\n\n";
 
-    if(ompl.planRRT(start,end, V,F, bvh))
+    if(ompl.planRRT(start,end, V, bvh))
     {
       ompl.getPath(path);
     }
@@ -359,9 +203,6 @@ int main(int argc, char *argv[])
       
       whole_weight+=time_weight[i];
 
-      double temp_time=2.0*(way_points[i+1]-way_points[i]).norm()/vel_limit;//2.0 2.5
-      if(init_time<temp_time)
-         init_time=temp_time;
     }
     
     trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
@@ -382,38 +223,17 @@ int main(int argc, char *argv[])
       spline.row((i+1)*(order_num-2)+1)=way_points[i+1].transpose();
     }
     spline.row(trajectory_num-1)=way_points[piece_num].transpose();
-    
-  }
-
-  max_step=1.0;
-
-
-
-  combination = Combination<40>::value();
-
-  int num=1000000, turns=0;
-
-  gnorm=1;
   
-  ks=1e-8;//1e-3
-  kt=1;
-  std::cout<<init_time<<"\n";
-  double piece_time=20;//init_time;//20
+}
 
-  Conversion<order_num>::convert_matrix();
-  
-  std::cout<<convert_list[0]<<std::endl;
-  //std::cout<<M_head<<std::endl;
-  //std::cout<<M_tail<<std::endl;
-  //M_convert/=double(Factorial<order_num>::value());
-  
+void init_variable(const std::vector<Eigen::RowVector3d>& vertex_list, 
+                   Data& spline,Data& p_slack,Data& p_lambda, 
+                   double piece_time, Eigen::VectorXd& t_slack, Eigen::VectorXd& t_lambda)
+{
   spline.row(1)=spline.row(0);
   spline.row(trajectory_num-2)=spline.row(trajectory_num-1);
-
-  spline*=scale;
-  V*=scale;
   
-  Data p_slack, p_lambda;
+  
   p_lambda.resize((order_num+1)*piece_num,3); p_lambda.setZero();
   p_slack.resize((order_num+1)*piece_num,3);
   for(int sp_id=0; sp_id<piece_num; sp_id++)
@@ -421,7 +241,7 @@ int main(int argc, char *argv[])
     p_slack.block<order_num+1,3>(sp_id*(order_num+1),0)=convert_list[sp_id]*spline.block<order_num+1,3>(sp_id*(order_num-2),0);
   }
 
-  Eigen::VectorXd t_slack, t_lambda;
+  
   t_lambda.resize(piece_num); t_lambda.setZero();
   t_slack.resize(piece_num);
   for(int sp_id=0; sp_id<piece_num; sp_id++)
@@ -429,10 +249,7 @@ int main(int argc, char *argv[])
     t_slack(sp_id)=piece_time;
   }
 
-
-
   M_dynamic=Dynamic3D<order_num, der_num>::dynamic_matrix();//Dynamic<order_num,1>::dynamic_matrix()+
-  
   
   subdivide_tree.resize(piece_num*res);
   A_list.resize(piece_num*res);
@@ -482,6 +299,142 @@ int main(int argc, char *argv[])
     }
   }  
 
+  is_seperate.resize(piece_num*res);
+  seperate_c.resize(piece_num*res);
+  seperate_d.resize(piece_num*res);
+  for(int i=0;i<piece_num*res;i++)
+  {
+    is_seperate[i].resize(vertex_list.size());
+    seperate_c[i].resize(vertex_list.size());
+    seperate_d[i].resize(vertex_list.size());
+  }
+
+}
+
+int main(int argc, char *argv[])
+{
+  if (argc < 2)
+	{
+		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
+		return -1;
+  }
+
+  const std::string mesh_file = argv[1];
+
+  std::ifstream fin("Config File/3D.json");   
+  json j = json::parse(fin);
+	fin.close();
+
+  lambda=j["lambda"].get<double>();
+
+  epsilon=j["epsilon"].get<double>();
+  margin=j["margin"].get<double>();//d hat
+  automove = j["auto"].get<int>();
+
+  is_optimal_plane=j["optimal_plane"].get<int>();
+
+  int init_spline=j["init"].get<int>();
+  
+  offset = j["offset"].get<double>();
+
+  res = j["res"].get<int>();
+
+  int if_exit=j["exit"].get<int>();
+
+  int if_init_ob=j["init_ob"].get<int>();
+
+  double stop=j["stop"].get<double>();
+
+  mu=j["mu"].get<double>();
+
+    
+  vel_limit=j["vel_limit"].get<double>();
+  acc_limit=j["acc_limit"].get<double>();
+  //lambda=1.0/margin2;
+  
+  result_file.open ("result/" +mesh_file + "_result_file_admm.txt");
+
+  
+  
+  
+  int dim = kdop_axis.size();
+  
+  kdop_matrix.resize(3, dim);
+  for(int k=0;k<dim;k++)
+  {
+    kdop_axis[k].normalize();
+    kdop_matrix.col(k) = kdop_axis[k];
+  }
+
+  aabb_matrix.resize(3, 3);
+  for(int k=0;k<3;k++)
+  {
+    aabb_matrix.col(k) = aabb_axis[k];
+  }
+  //lambda/=epsilon;
+
+
+
+  Eigen::MatrixXd V;
+  Eigen::MatrixXi F;
+  
+  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
+
+  std::cout<<"before bvh init\n";
+  BVH bvh;
+  clock_t time1 = clock();
+  
+  if(if_init_ob)
+  {
+    bvh.InitPointcloud(V);
+  }
+
+  std::vector<Eigen::RowVector3d> vertex_list;
+  vertex_list.resize(V.rows());
+  for(int i=0;i<(int)vertex_list.size();i++)
+  {              
+    vertex_list[i]=V.row(i);
+  }
+
+  clock_t time2 = clock();
+
+  std::cout<<"time_bvh:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+     
+  Data spline;
+  
+  if(init_spline==1)
+  {
+    way_point_init( mesh_file, spline);
+  }
+  else if(init_spline==2)
+  {
+    ompl_init( V, bvh,  spline);
+  }
+
+  combination = Combination<40>::value();
+
+  int num=1000000, turns=0;
+
+  gnorm=1;
+  
+  ks=1e-8;//1e-3
+  kt=1;
+
+  double piece_time=20;//init_time;//20
+
+  Conversion<order_num>::convert_matrix();
+  
+  std::cout<<convert_list[0]<<std::endl;
+  //std::cout<<M_head<<std::endl;
+  //std::cout<<M_tail<<std::endl;
+  //M_convert/=double(Factorial<order_num>::value());
+  Data p_slack, p_lambda; 
+  Eigen::VectorXd t_slack, t_lambda;
+  init_variable(vertex_list, 
+                spline,p_slack,p_lambda, 
+                piece_time,t_slack,t_lambda);
+  
+  double whole_time=0;
   automove=true;
 
   while(iter<num) 
@@ -708,7 +661,6 @@ int main(int argc, char *argv[])
  
   viewer.launch();
   */
-  #endif
   return 0;
 }
 

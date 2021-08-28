@@ -124,7 +124,6 @@ int main(int argc, char *argv[])
   epsilon=j["epsilon"].get<double>();
   margin=j["margin"].get<double>();//d hat
   automove = j["auto"].get<int>();
-  step_choose = j["step_choose"].get<int>();
 
   int init_spline=j["init"].get<int>();
   
@@ -144,10 +143,7 @@ int main(int argc, char *argv[])
   //lambda=1.0/margin2;
 
   double whole_time=0;
-  
-  adaptive_change=false;
-  optimize_time=false;
-  
+    
   
   
   int dim = kdop_axis.size();

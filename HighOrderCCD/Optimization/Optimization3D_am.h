@@ -291,8 +291,6 @@ public:
       piece_time=init_time+step*t_direction;
     }
     
-
-    max_step=step;
     
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<

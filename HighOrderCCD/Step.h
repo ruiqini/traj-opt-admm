@@ -23,14 +23,9 @@ class Step
                                 BVH& bvh)
     {
         double step;
-        if(step_choose)
-        {
-            step=1.0;
-        }
-        else
-        {
-            step=std::min(1.5*max_step,1.0);
-        }
+       
+        step=1.0;
+        
 
         //clock_t time1 = clock();
         //std::cout<<std::endl<<"bvhtime:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
@@ -193,14 +188,9 @@ class Step
                              const std::vector<std::vector<double>>& d_lists)
     {
         double step;
-        if(step_choose)
-        {
-            step=1.0;
-        }
-        else
-        {
-            step=std::min(1.5*max_step,1.0);
-        }
+       
+        step=1.0;
+        
         double temp_step=step;
         for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
@@ -254,14 +244,9 @@ class Step
                             const std::vector<std::vector<double>>& d_lists)
     {
         double step;
-        if(step_choose)
-        {
-            step=1.0;
-        }
-        else
-        {
-            step=std::min(1.5*max_step,1.0);
-        }
+       
+        step=1.0;
+        
 
         bool is_collided=true;
         //std::cout<<"bvh: "<<collision_pair.size()<<std::endl;
