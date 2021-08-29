@@ -167,6 +167,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
         simplify_path( V, bvh,  edges,
                       path,  tmp_path);
         std::cout<<"size:"<<path.size()<<" "<<tmp_path.size()<<"\n";
+        
         for(int j=0;j<(int)tmp_path.size()-1;j++)
         {
            Eigen::MatrixXd edge;
@@ -373,7 +374,6 @@ int main(int argc, char *argv[])
   vel_limit=j["vel_limit"].get<double>();
   acc_limit=j["acc_limit"].get<double>();
 
-  double whole_time=0;
   
   int dim = kdop_axis.size();
   kdop_matrix.resize(3, dim);
@@ -420,41 +420,7 @@ int main(int argc, char *argv[])
   
   uav_num=4;//2
   
-  /*
-  piece_num=3;
-  trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
-
-  time_weight.resize(piece_num);
-  whole_weight=0;
-  for(int k=0;k<piece_num;k++)
-  {
-    time_weight[k]=1;
-    //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
-    whole_weight+=time_weight[k];
-  }
-  std::vector<std::vector<Eigen::RowVector3d>> way_points_list;
-  way_points_list.resize(uav_num);
   
-  way_points_list[0].push_back(Eigen::Vector3d(2, 2 ,1));
-  way_points_list[0].push_back(Eigen::Vector3d(1, 0, -0.2));
-  way_points_list[0].push_back(Eigen::Vector3d(-2, 0, -0.2));
-  way_points_list[0].push_back(Eigen::Vector3d(-2, -2, -1));
-
-  way_points_list[1].push_back(Eigen::Vector3d(2.5, 2 ,-1));
-  way_points_list[1].push_back(Eigen::Vector3d(2, 0, 0.2));
-  way_points_list[1].push_back(Eigen::Vector3d(-2, 0, 0.2));
-  way_points_list[1].push_back(Eigen::Vector3d(-2.5, -2, 1));
-
-  way_points_list[2].push_back(Eigen::Vector3d(-2, 2 ,1));
-  way_points_list[2].push_back(Eigen::Vector3d(-1, 0, -0.4));
-  way_points_list[2].push_back(Eigen::Vector3d(2, 0, -0.4));
-  way_points_list[2].push_back(Eigen::Vector3d(2, -2, -1));
-
-  way_points_list[3].push_back(Eigen::Vector3d(-2.5, 2 ,-1));
-  way_points_list[3].push_back(Eigen::Vector3d(-2, 0, 0.4));
-  way_points_list[3].push_back(Eigen::Vector3d(2, 0, 0.4));
-  way_points_list[3].push_back(Eigen::Vector3d(2.5, -2, 1));
-  */
   std::vector<std::vector<Eigen::Vector3d>> way_points_list;
   ompl_init(V,bvh, way_points_list);
 
@@ -499,203 +465,39 @@ int main(int argc, char *argv[])
                  p_lambda_list, t_lambda_list);
 
   //std::cout<<F_<<std::endl;
-
-  igl::opengl::glfw::Viewer viewer;
+  double whole_time=0;
   
-  viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
-  viewer.core().is_animating = true;
-  viewer.core().camera_zoom = 2.0f;
-  viewer.data().line_width = 1.0f;
-  viewer.data().point_size = 3.0f;
-  
-  Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IR(640,800);
-  Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IG(640,800);
-  Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IB(640,800);
-  Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IA(640,800);
-
-  //bool draw_init=true;
-
-  bool is_write=true;
-
-  const auto &key_down = [&](igl::opengl::glfw::Viewer &,unsigned char key,int mod)->bool
+  if(!gui)
   {
-    switch(key)
+    automove=true;
+    while(iter<num) 
     {
-      case 'R':
-      {
-        iter=0;
-        turns=0;
-        break;
-      }
-      case 'C':
-      {
-        break;
-      }
-      case ' ':
-      {
-        //viewer.core().draw_buffer(viewer.data(),false,IR,IG,IB,IA);
-        //igl::png::writePNG(IR,IG,IB,IA, "../png/" + std::to_string(turns) + ".png");
-        turns=iter+1;
-        break;
-      }
-      case '.':
-      {
-        automove=false;
-        break;
-      }
-      case ',':
-      {
-        automove=true;
-        break;
-      }
-      default:
-        return false;
-    }
-
-    return true;
-  };
       
-      viewer.data().line_width = 5.0f;
-      viewer.data().point_size = 5.0f;
-      
-      Eigen::MatrixXd C=V;
-      
-      Eigen::RowVector3d C0(0.2,0.2,0.8);
-      Eigen::RowVector3d C1(0.8,0.2,0.2);
-      Eigen::RowVector3d C2(0.2,0.8,0.6);
-      
-      double up=V.col(2).maxCoeff();
-      double down=V.col(2).minCoeff();
-
-      double x_up=V.col(0).maxCoeff();
-      double x_down=V.col(0).minCoeff();
-
-      double y_up=V.col(1).maxCoeff();
-      double y_down=V.col(1).minCoeff();
-      double _up=x_up+y_up;
-      double _down=x_down+y_down;
-      
-      for(int i=0;i<V.rows();i++)
+      if(iter>1 && gnorm<stop)
       {
-        double l=V(i,2);
-        Eigen::RowVector3d tmp=((l-down)*C0+(up-l)*C2)/(up-down);
-
-        double _l=V(i,0)+V(i,1);
-        C.row(i)=((_l-_down)*tmp+(_up-_l)*C1)/(_up-_down);
-      }
-      viewer.data().set_points(V,C);
-
-  for(unsigned int k=0;k<subdivide_tree.size();k++)
-  {
-    int sp_id=std::get<0>(subdivide_tree[k]);
-    Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
-    Eigen::MatrixXd bz;
-    for(int i=0;i<uav_num;i++)
-    {
-      bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
-    
-      std::vector<Eigen::RowVector3d> P(order_num+1);
-      for(int j=0;j<=order_num;j++)
-      {
-        P[j].setZero();
-        for(int j0=0;j0<=order_num;j0++)
-        {
-          P[j]+=basis(j,j0)*bz.row(j0);
-        }
-      }
-      if(k%2==1)
-      {
-        for(int j=0;j<=order_num;j++)
-        {
-          viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
-        }
-      }
-      else
-      {
-        for(int j=0;j<=order_num;j++)
-        {
-          viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
-        }
-      }
-
-    }
-    
-  }
-   
-  const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
-  {  
-     if(iter<num) 
-     {
-       if(iter<turns||automove)
-       {
-          viewer.data().clear_edges();
-                    
-          //viewer.data().line_width = 5.0f;
-          for(unsigned int k=0;k<subdivide_tree.size();k++)
-          {
-            int sp_id=std::get<0>(subdivide_tree[k]);
-            Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
-            Eigen::MatrixXd bz;
-            for(int i=0;i<uav_num;i++)
-            {
-              bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
-            
-              std::vector<Eigen::RowVector3d> P(order_num+1);
-              for(int j=0;j<=order_num;j++)
-              {
-                P[j].setZero();
-                for(int j0=0;j0<=order_num;j0++)
-                {
-                  P[j]+=basis(j,j0)*bz.row(j0);
-                }
-              }
-              if(k%2==1)
-              {
-                for(int j=0;j<=order_num;j++)
-                {
-                  viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
-                }
-              }
-              else
-              {
-                for(int j=0;j<=order_num;j++)
-                {
-                  viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
-                }
-              }
-
-            }
-            
-          }
-        }
         
-        if(iter>1 && gnorm<stop && is_write)
-        {
-         
-              is_write = false;
-              result_file<<iter<<std::endl;
-              result_file<<whole_time<<std::endl;
-              result_file<<gnorm<<std::endl;
-              result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-              //result_file<<spline<<std::endl;
-              //result_file<<piece_time<<std::endl;
+            result_file<<iter<<std::endl;
+            result_file<<whole_time<<std::endl;
+            result_file<<gnorm<<std::endl;
+            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
+            result_file<<piece_time<<std::endl;
 
-              if(if_exit)
-                exit(0);
-              else
-                automove=false;
-          
-        }
+            if(if_exit)
+              exit(0);
+            else
+              automove=false;
+            break;
+            //log_data(mesh_file, spline, piece_time);
+      }
+      
+      if(iter<turns||automove)
+      {
+
+        clock_t time0 = clock();
+        std::cout<<"iter: "<<iter<<std::endl;
+            
         
-        if(iter<turns||automove)
-        {
-
-          clock_t time0 = clock();
-          std::cout<<"iter: "<<iter<<std::endl;
-              
-         
-          
-          Optimization3D_multi::optimization(spline_list, piece_time, 
+        Optimization3D_multi::optimization(spline_list, piece_time, 
                                               p_slack_list, t_slack_list, 
                                               p_lambda_list, t_lambda_list,
                                               vertex_list, bvh);
@@ -705,25 +507,253 @@ int main(int argc, char *argv[])
                                                       p_lambda_list, t_lambda_list,
                                                       vertex_list, bvh);
            */         
-          clock_t time1 = clock();
-          whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
-          std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
-          //std::cout<<p0.size()<<std::endl;
-          iter++;
+    
+        clock_t time1 = clock();
+        whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
+        std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+        //std::cout<<p0.size()<<std::endl;
+        iter++;
+      }
+    }
+
+  }
+  else
+  {
+      igl::opengl::glfw::Viewer viewer;
+ 
+      viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
+      viewer.core().is_animating = true;
+      viewer.core().camera_zoom = 2.0f;
+      viewer.data().line_width = 1.0f;
+      viewer.data().point_size = 3.0f;
+
+      Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IR(640,800);
+      Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IG(640,800);
+      Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IB(640,800);
+      Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IA(640,800);
+
+      //bool draw_init=true;
+
+      bool is_write=true;
+
+      const auto &key_down = [&](igl::opengl::glfw::Viewer &,unsigned char key,int mod)->bool
+      {
+        switch(key)
+        {
+          case 'R':
+          {
+            iter=0;
+            turns=0;
+            break;
+          }
+          case 'C':
+          {
+            break;
+          }
+          case ' ':
+          {
+            //viewer.core().draw_buffer(viewer.data(),false,IR,IG,IB,IA);
+            //igl::png::writePNG(IR,IG,IB,IA, "../png/" + std::to_string(turns) + ".png");
+            turns=iter+1;
+            break;
+          }
+          case '.':
+          {
+            automove=false;
+            break;
+          }
+          case ',':
+          {
+            automove=true;
+            break;
+          }
+          default:
+            return false;
         }
-     }  
+
+        return true;
+      };
+      
+      viewer.data().line_width = 5.0f;
+      viewer.data().point_size = 5.0f;
+      
+      Eigen::MatrixXd C=V;
+      
+      Eigen::RowVector3d C0(0.8,0.2,0.2);
+      Eigen::RowVector3d C1(0.2,0.8,0.2);
+      Eigen::RowVector3d C2(0.2,0.2,0.8);
+      Eigen::RowVector3d C3(0.2,0.8,0.8);
+      Eigen::RowVector3d C4(0.8,0.2,0.8);
+      Eigen::RowVector3d C5(0.8,0.8,0.2);
+      
+      
      
-      return false;
-  };
-  
-  
-  viewer.callback_pre_draw = pre_draw;
-  viewer.callback_key_down = key_down;
-  
-  
-  
-  
-  viewer.launch();
+
+      double x_up=V.col(0).maxCoeff();
+      double x_down=V.col(0).minCoeff();
+
+      double y_up=V.col(1).maxCoeff();
+      double y_down=V.col(1).minCoeff();
+
+      double z_up=V.col(2).maxCoeff();
+      double z_down=V.col(2).minCoeff();
+      
+      for(int i=0;i<V.rows();i++)
+      {
+       
+        double x=V(i,0);
+        double y=V(i,1);
+        double z=V(i,2);
+
+        Eigen::RowVector3d x_tmp=((x-x_down)*C0+(x_up-x)*C3)/(x_up-x_down);
+        Eigen::RowVector3d y_tmp=((y-y_down)*C1+(y_up-y)*C4)/(y_up-y_down);
+        Eigen::RowVector3d z_tmp=((z-z_down)*C2+(z_up-z)*C5)/(z_up-z_down);
+
+        C.row(i)=(x_tmp+y_tmp+z_tmp)/3.0;
+      }
+      viewer.data().set_points(V,C);
+
+      for(int i=0;i<uav_num;i++)
+        viewer.data().add_points(spline_list[i].row(0),C0);
+
+      for(unsigned int k=0;k<subdivide_tree.size();k++)
+      {
+        int sp_id=std::get<0>(subdivide_tree[k]);
+        Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
+        Eigen::MatrixXd bz;
+        for(int i=0;i<uav_num;i++)
+        {
+          bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
+        
+          std::vector<Eigen::RowVector3d> P(order_num+1);
+          for(int j=0;j<=order_num;j++)
+          {
+            P[j].setZero();
+            for(int j0=0;j0<=order_num;j0++)
+            {
+              P[j]+=basis(j,j0)*bz.row(j0);
+            }
+          }
+          if(k%2==1)
+          {
+            for(int j=0;j<=order_num;j++)
+            {
+              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+            }
+          }
+          else
+          {
+            for(int j=0;j<=order_num;j++)
+            {
+              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+            }
+          }
+
+        }
+        
+      }
+     
+      const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
+      {  
+        if(iter<num) 
+        {
+            if(iter<turns||automove)
+            {
+              viewer.data().clear_edges();
+                        
+              //viewer.data().line_width = 5.0f;
+              //int edge_iter=0;
+              for(unsigned int k=0;k<subdivide_tree.size();k++)
+              {
+                int sp_id=std::get<0>(subdivide_tree[k]);
+                Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
+                Eigen::MatrixXd bz;
+                for(int i=0;i<uav_num;i++)
+                {
+                  bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
+                
+                  std::vector<Eigen::RowVector3d> P(order_num+1);
+                  for(int j=0;j<=order_num;j++)
+                  {
+                    P[j].setZero();
+                    for(int j0=0;j0<=order_num;j0++)
+                    {
+                      P[j]+=basis(j,j0)*bz.row(j0);
+                    }
+                  }
+                  if(k%2==1)
+                  {
+                    for(int j=0;j<=order_num;j++)
+                    {
+                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+                    }
+                  }
+                  else
+                  {
+                    for(int j=0;j<=order_num;j++)
+                    {
+                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+                    }
+                  }
+
+                }
+                
+              }
+            }
+            
+            if(iter>1 && gnorm<stop && is_write)
+            {
+              
+                  is_write = false;
+                  result_file<<iter<<std::endl;
+                  result_file<<whole_time<<std::endl;
+                  result_file<<gnorm<<std::endl;
+                  result_file<<V.rows()<<" "<<F.rows()<<std::endl;
+                  result_file<<piece_time<<std::endl;
+
+                  if(if_exit)
+                    exit(0);
+                  else
+                    automove=false;
+                  
+                  //log_data(mesh_file, spline, piece_time);
+            }
+            
+            if(iter<turns||automove)
+            {
+
+              clock_t time0 = clock();
+              std::cout<<"iter: "<<iter<<std::endl;
+                  
+              
+              Optimization3D_multi::optimization(spline_list, piece_time, 
+                                              p_slack_list, t_slack_list, 
+                                              p_lambda_list, t_lambda_list,
+                                              vertex_list, bvh);
+              /* 
+              Optimization3D_multi::optimization_decouple(spline_list, piece_time_list, 
+                                                          p_slack_list, t_slack_list, 
+                                                          p_lambda_list, t_lambda_list,
+                                                          vertex_list, bvh);
+              */         
+        
+              clock_t time1 = clock();
+              whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
+              std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+              //std::cout<<p0.size()<<std::endl;
+              iter++;
+            }
+        }  
+        
+          return false;
+      };
+    
+      viewer.callback_pre_draw = pre_draw;
+      viewer.callback_key_down = key_down;
+    
+      viewer.launch();
+
+  }
 
   return 0;
 }

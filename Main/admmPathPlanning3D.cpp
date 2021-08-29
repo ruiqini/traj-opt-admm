@@ -120,6 +120,83 @@ void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& 
     
 }
 
+bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges, 
+                    const Eigen::MatrixXd& edge)
+{
+           std::vector<unsigned int> collision_pair;
+           bvh.EdgeCollision(edge, collision_pair,offset+0.5*margin);
+
+            
+           int collision_size=collision_pair.size();
+           bool is_collided=false;
+          for(int i=0;i<collision_size;i++)
+          {
+              //int ob_id=*it;
+              int ob_id=collision_pair[i];
+
+              Eigen::RowVector3d _position=V.row(ob_id);
+
+              is_collided= CCD::GJKDCD(edge,_position, offset+0.5*margin);  //cgal
+              if(is_collided)
+              {
+                return true;
+              }     
+              
+          }
+
+          for(int i=0;i<(int)edges.size();i++)
+          {
+            is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
+            if(is_collided)
+            {
+              return true;
+            }
+          }
+          return false;
+}
+
+void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges,
+                   const std::vector<Eigen::Vector3d> & path, std::vector<Eigen::Vector3d>& tmp_path)
+{
+     std::vector<int> id_vec; id_vec.resize(path.size());
+     std::vector<bool> rm_vec; rm_vec.resize(path.size());
+     for(int i=0;i<(int)id_vec.size();i++)
+     {
+        id_vec[i]=i;
+        rm_vec[i]=false;
+     }
+     int prev=0;
+     int next=2;
+     bool is_collided;
+     for(int i=1;i<(int)id_vec.size()-1;i++)
+     {
+        Eigen::MatrixXd edge;
+        edge.resize(2,3);
+        edge.row(0)=path[prev].transpose();
+        edge.row(1)=path[next].transpose();
+        is_collided=edge_collision( V, bvh, edges, 
+                                    edge);
+        if(is_collided)
+        {
+          prev=i;
+          next+=1;
+        }
+        else
+        {
+          next+=1;
+          rm_vec[i]=true;
+        }
+     }
+
+     tmp_path.clear();
+     for(int i=0;i<(int)id_vec.size();i++)
+     {
+       if(rm_vec[i]==false)
+         tmp_path.push_back(path[i]);
+     }
+
+}
+
 void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& way_points)
 {
       Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
@@ -133,6 +210,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& 
      
       
       std::vector<Eigen::Vector3d> path;
+      std::vector<Eigen::Vector3d> tmp_path;
 
       Eigen::Vector3d start,end;
       /*
@@ -163,7 +241,10 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& 
         ompl.getPath(path);
       }
 
-      way_points=path;
+      simplify_path( V, bvh,  edges,
+                      path,  tmp_path);
+      std::cout<<"size:"<<path.size()<<" "<<tmp_path.size()<<"\n";
+      way_points=tmp_path;
     
     
   
