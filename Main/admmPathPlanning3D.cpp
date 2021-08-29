@@ -129,8 +129,8 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& 
       Eigen::VectorXd lowerBound, upperBound;
       lowerBound=1.2*minV;
       upperBound=1.2*maxV;
-      OMPL ompl(lowerBound, upperBound,
-                V,bvh);
+
+     
       
       std::vector<Eigen::Vector3d> path;
 
@@ -152,8 +152,13 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& 
       end(0)= -2.7;
       end(1)= 0;
       end(2)= 0;
+
+      std::vector<Eigen::MatrixXd> edges;
+      edges.clear();
+      OMPL ompl(lowerBound, upperBound,
+                V,edges, bvh);
       
-      if(ompl.planRRT(start, end, V, bvh))
+      if(ompl.planRRT(start, end, V, edges, bvh))
       {
         ompl.getPath(path);
       }

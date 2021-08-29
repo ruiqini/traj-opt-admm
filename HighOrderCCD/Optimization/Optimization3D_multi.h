@@ -26,7 +26,7 @@ public:
  
   typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
 
-  static void optimization(std::vector<Data>& spline_list, std::vector<double>& piece_time_list,
+  static void optimization(std::vector<Data>& spline_list, double& piece_time,
                            std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list, 
                            std::vector<Data>& p_lambda_list, std::vector<Eigen::VectorXd>& t_lambda_list, 
                            const std::vector<Eigen::RowVector3d>& vertex_list,
@@ -50,11 +50,12 @@ public:
 
       separate_self( spline_list, 
                       c_lists, d_lists, bvh);
-
+      clock_t time0 = clock();
+      /*
       std::vector<Data> direction_list; direction_list.resize(uav_num);
       std::vector<double> t_direction_list; t_direction_list.resize(uav_num);
       gnorm=0;
-      clock_t time0 = clock();
+      
       for(int i=0;i<uav_num;i++)
       {
         Data direction;
@@ -69,7 +70,7 @@ public:
         t_direction_list[i]=t_direction;
       }
       gnorm/=double(uav_num);
-      
+
       std::vector<double> step_list; 
 
       Step::self_step(spline_list, direction_list,step_list, bvh);
@@ -86,7 +87,13 @@ public:
                             c_lists[i], d_lists[i],
                             step_list[i]);
       }
-      
+      */
+      update_spline( spline_list,  piece_time,
+                      p_slack_list, t_slack_list, 
+                      p_lambda_list,  t_lambda_list, 
+                      c_lists, d_lists,  
+                      vertex_list,
+                      bvh);
       clock_t time1 = clock();   
 
       //gn_file <<gnorm<<std::endl;
@@ -94,15 +101,13 @@ public:
       for(int i=0;i<uav_num;i++)
       {
 
-        update_slack_lambda(spline_list[i],  piece_time_list[i],
+        update_slack_lambda(spline_list[i],  piece_time,
                             p_slack_list[i], t_slack_list[i],
                             p_lambda_list[i],  t_lambda_list[i]);
       }
       
-      for(int i=0;i<uav_num;i++)
-      {
-        std::cout<<"piece_time:"<<piece_time_list[i]<<std::endl;
-      }
+      std::cout<<"piece_time:"<<piece_time<<std::endl;
+     
       //energy_file <<Energy::fast_whole_energy( spline, V, F, bvh)<<std::endl;
       
       clock_t time2 = clock();
@@ -306,7 +311,7 @@ public:
                                         p_part,  t_part, 
                                         p_lambda_part, t_lambda_part, 
                                         grad, hessian);
-        Eigen::VectorXd ng0;
+        Eigen::VectorXd g0;
         Eigen::MatrixXd h0;
         int t_n;
 
@@ -314,11 +319,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(6,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(6,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(6,6,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -333,11 +338,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(0,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(0,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(0,0,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -352,7 +357,7 @@ public:
         {
           t_n=order_num+1;
           h0=hessian;
-          ng0=-grad;
+          g0=grad;
 
         }
 
@@ -377,9 +382,9 @@ public:
           }
          
           
-          x0 = solver.solve(ng0);
-          //x0=ng0;
-          wolfe=x0.dot(ng0);
+          x0 = -solver.solve(g0);
+          //x0=-g0;
+          wolfe=-x0.dot(g0);
 
           Data direction;
           double t_direction;
@@ -445,6 +450,157 @@ public:
     
   }
 
+  static void update_spline(std::vector<Data>& spline_list, double& piece_time,
+                            const std::vector<Data>& p_slack_list, const std::vector<Eigen::VectorXd>& t_slack_list, 
+                            const std::vector<Data>& p_lambda_list, const std::vector<Eigen::VectorXd>& t_lambda_list, 
+                            const std::vector<std::vector<std::vector<Eigen::Vector3d>>>& c_lists,
+                            const std::vector<std::vector<std::vector<double>>>& d_lists,  
+                            const std::vector<Eigen::RowVector3d>& vertex_list,
+                            BVH& bvh)
+  {
+      int t_n=trajectory_num;
+      Eigen::VectorXd G; 
+      Eigen::MatrixXd H;
+      G.resize(uav_num*(t_n-4)*3+1); G.setZero();
+      H.resize(uav_num*(t_n-4)*3+1,uav_num*(t_n-4)*3+1); H.setZero();
+      int num=3*(t_n-4);
+      for(int i=0;i<uav_num;i++)
+      {
+    
+        Eigen::VectorXd grad, partgrad;
+        Eigen::MatrixXd hessian;
+        double g_t, h_t;
+        
+        Gradient_admm::global_spline_gradient(spline_list[i],  piece_time,
+                                              p_slack_list[i],  t_slack_list[i],
+                                              p_lambda_list[i],  t_lambda_list[i],
+                                              c_lists[i], d_lists[i],
+                                              grad, hessian);
+
+        g_t=grad(3*t_n);
+        h_t=hessian(3*t_n,3*t_n);
+        partgrad=hessian.block(6,3*t_n,num,1);
+
+        Eigen::VectorXd g = grad.segment(6,num);
+        Eigen::MatrixXd h = hessian.block(6,6,num,num);
+
+        G.segment(i*num,num)=g;
+        G(uav_num*num)+=g_t;
+
+        H.block(i*num,i*num, num,num)=h;
+        H.block(i*num,uav_num*num,num,1)=partgrad;
+        H.block(uav_num*num,i*num,1,num)=partgrad.transpose();
+        H(uav_num*num,uav_num*num)+=h_t;
+      }
+
+      Eigen::VectorXd x, x0;
+
+      SpMat H_=H.sparseView();
+      Eigen::SimplicialLLT<SpMat> solver;  // performs a Cholesky factorization of A
+      solver.compute(H_);
+
+      x0 = -solver.solve(G);
+      wolfe = -x0.dot(G);
+      
+      Data direction;
+      std::vector<Data> direction_list; direction_list.resize(uav_num);
+      for(int i=0;i<uav_num;i++)
+      {
+        x=x0.segment(i*num,num);
+    
+        //t_direction=x0((t_n-4)*3);
+        Eigen::MatrixXd d(Eigen::Map<Eigen::MatrixXd>(x.data(), 3,t_n-4));
+
+        Eigen::MatrixXd d_=d.transpose();
+        
+        direction.resize(t_n,3);
+      
+        direction.setZero();
+        direction.block(2,0,t_n-4,3)=d_;
+        direction_list[i]=direction;
+      }
+      double t_direction=x0(uav_num*num);
+      //std::cout<<G.transpose()<<"\n\n";
+      //std::cout<<x0.transpose()<<"\n\n";
+      gnorm=G.norm()/double(uav_num);
+
+      std::cout<<"gn:"<<G.norm()<<std::endl;
+      std::cout<<"dn:"<<x0.norm()<<std::endl;
+      std::cout<<"t_direction:"<<t_direction<<std::endl;
+
+      double step=1;
+      Step::couple_self_step(spline_list, direction_list,step, bvh);
+       std::cout<<"self step:"<<step<<std::endl<<std::endl;
+      for(int i=0;i<uav_num;i++)
+      {
+        double step0=Step::position_step(spline_list[i], direction_list[i],vertex_list, bvh);  
+        if(step0<step)
+           step=step0;
+      }
+
+      std::cout<<"highcdd:"<<step<<std::endl<<std::endl;
+
+      if(piece_time+step*t_direction<=0)
+      {
+        step=-0.95*piece_time/t_direction;
+      }
+      
+
+
+      double e0=spline_energy(spline_list,  piece_time,
+                              p_slack_list,  t_slack_list,
+                              p_lambda_list,  t_lambda_list,
+                              c_lists, d_lists);
+      double init_time=piece_time;
+      piece_time=init_time+step*t_direction;
+
+      std::vector<Data> tmp_spline_list;
+      tmp_spline_list.resize(uav_num);
+      for(int i=0;i<uav_num;i++)
+      {
+        tmp_spline_list[i]=spline_list[i]+step*direction_list[i];
+      }
+
+      double e1=spline_energy(tmp_spline_list,  piece_time,
+                              p_slack_list,  t_slack_list,
+                              p_lambda_list,  t_lambda_list,
+                              c_lists, d_lists);
+      while(e0-1e-4*wolfe*step<e1)
+      {
+        step*=0.8;
+        
+        piece_time=init_time+step*t_direction;
+        for(int i=0;i<uav_num;i++)
+        {
+          tmp_spline_list[i]=spline_list[i]+step*direction_list[i];
+        }
+        e1=spline_energy(tmp_spline_list,  piece_time,
+                          p_slack_list,  t_slack_list,
+                          p_lambda_list,  t_lambda_list,
+                          c_lists, d_lists);
+      }
+      spline_list=tmp_spline_list;
+      
+  }
+
+  static double spline_energy( const std::vector<Data>& spline_list, const double& piece_time,
+                              const std::vector<Data>& p_slack_list, const std::vector<Eigen::VectorXd>& t_slack_list, 
+                              const std::vector<Data>& p_lambda_list, const std::vector<Eigen::VectorXd>& t_lambda_list, 
+                              const std::vector<std::vector<std::vector<Eigen::Vector3d>>>& c_lists,
+                              const std::vector<std::vector<std::vector<double>>>& d_lists)
+  {
+    double e=0;
+    for(int i=0;i<uav_num;i++)
+    {
+      e+=Energy_admm::spline_energy( spline_list[i],  piece_time,
+                                     p_slack_list[i],  t_slack_list[i],
+                                     p_lambda_list[i],  t_lambda_list[i],
+                                     c_lists[i], d_lists[i]);
+
+    }
+    return e;   
+  }
+
   static void spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,
                                        const Data& p_slack, const Eigen::VectorXd& t_slack,
                                        const Data& p_lambda, const Eigen::VectorXd& t_lambda,
@@ -473,13 +629,13 @@ public:
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
 
-    Eigen::VectorXd ng = -grad.segment(6,(t_n-4)*3);
+    Eigen::VectorXd g = grad.segment(6,(t_n-4)*3);
     Eigen::MatrixXd h = hessian.block(6,6,(t_n-4)*3,(t_n-4)*3);
     
-    Eigen::VectorXd ng0((t_n-4)*3+1);
+    Eigen::VectorXd g0((t_n-4)*3+1);
     Eigen::MatrixXd h0((t_n-4)*3+1,(t_n-4)*3+1);
-    ng0.head((t_n-4)*3)=ng;
-    ng0((t_n-4)*3)=-g_t;
+    g0.head((t_n-4)*3)=g;
+    g0((t_n-4)*3)=g_t;
 
     h0.block(0,0,(t_n-4)*3,(t_n-4)*3)=h;
     h0((t_n-4)*3,(t_n-4)*3)=h_t;//h_t;
@@ -514,9 +670,9 @@ public:
     */
    
     
-    x0 = solver.solve(ng0);
-    //x0=ng0;
-    wolfe=x0.dot(ng0);
+    x0 = -solver.solve(g0);
+    //x0=g0;
+    wolfe=-x0.dot(g0);
 
     x=x0.head((t_n-4)*3);
     
@@ -532,11 +688,11 @@ public:
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
     
-    std::cout<<"gn:"<<ng0.norm()<<std::endl;
+    std::cout<<"gn:"<<g0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl;
     
-    gnorm+=ng0.norm();
+    gnorm+=g0.norm();
     //std::cout<<"gnorm:"<<gnorm<<std::endl;
   }
 

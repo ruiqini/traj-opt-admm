@@ -255,7 +255,7 @@ public:
                                         p_part,  t_part, 
                                         p_lambda_part, t_lambda_part, 
                                         grad, hessian);
-        Eigen::VectorXd ng0;
+        Eigen::VectorXd g0;
         Eigen::MatrixXd h0;
         int t_n;
 
@@ -264,11 +264,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(6,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(6,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(6,6,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -283,11 +283,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(0,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(0,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(0,0,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -302,7 +302,7 @@ public:
         {
           t_n=order_num+1;
           h0=hessian;
-          ng0=-grad;
+          g0=grad;
 
         }
 
@@ -327,10 +327,10 @@ public:
           }
         
           
-          x0 = solver.solve(ng0);
+          x0 = -solver.solve(g0);
           
-          //x0=ng0;
-          wolfe=x0.dot(ng0);
+          //x0=-g0;
+          wolfe=-x0.dot(g0);
 
           Data direction;
           double t_direction;
@@ -422,13 +422,13 @@ public:
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
 
-    Eigen::VectorXd ng = -grad.segment(6,(t_n-4)*3);
+    Eigen::VectorXd g = grad.segment(6,(t_n-4)*3);
     Eigen::MatrixXd h = hessian.block(6,6,(t_n-4)*3,(t_n-4)*3);
     
-    Eigen::VectorXd ng0((t_n-4)*3+1);
+    Eigen::VectorXd g0((t_n-4)*3+1);
     Eigen::MatrixXd h0((t_n-4)*3+1,(t_n-4)*3+1);
-    ng0.head((t_n-4)*3)=ng;
-    ng0((t_n-4)*3)=-g_t;
+    g0.head((t_n-4)*3)=g;
+    g0((t_n-4)*3)=g_t;
 
     h0.block(0,0,(t_n-4)*3,(t_n-4)*3)=h;
     h0((t_n-4)*3,(t_n-4)*3)=h_t;//h_t;
@@ -468,9 +468,9 @@ public:
     solver.compute(H);
     
 
-    x0 = solver.solve(ng0);
-    //x0=ng0;
-    wolfe=x0.dot(ng0);
+    x0 = -solver.solve(g0);
+    //x0=-g0;
+    wolfe=-x0.dot(g0);
     
     clock_t time1 = clock();
     std::cout<<"\ntime solve:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
@@ -488,11 +488,11 @@ public:
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
     /*
-    std::cout<<"gn:"<<ng0.norm()<<std::endl;
+    std::cout<<"gn:"<<g0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl<<std::endl;
     */
-    gnorm=ng0.norm();
+    gnorm=g0.norm();
 
     return 1;
     //std::cout<<"gnorm:"<<gnorm<<std::endl;

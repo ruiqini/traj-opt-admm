@@ -24,14 +24,14 @@ public:
   
 
   OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound,
-        Eigen::MatrixXd _V,
+        Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
         BVH& _bvh);
   bool checkMotion(const ob::State *s1, const ob::State *s2);
   int nrBroad() const;
   int nrNarrow() const;
   void getPath(std::vector<Eigen::Vector3d> &path);//const;const 
   bool planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal,
-                      Eigen::MatrixXd _V,
+                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
                       BVH& _bvh,
                        int time=1200);//std::function<bool(const Mesh&)> fn
   ob::OptimizationObjectivePtr getClearanceObjective(const ob::SpaceInformationPtr& si);

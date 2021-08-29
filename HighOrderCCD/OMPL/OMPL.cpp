@@ -15,18 +15,20 @@ class myMotionValidator : public ob::MotionValidator
 public:
    
     myMotionValidator(ob::SpaceInformation* si, 
-                      Eigen::MatrixXd _V,
+                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
+      edges=_edges;
       bvh=&_bvh;
     }
  
     myMotionValidator(const ob::SpaceInformationPtr &si, 
-                      Eigen::MatrixXd _V,
+                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
+      edges=_edges;
       bvh=&_bvh;
     }
 
@@ -56,7 +58,7 @@ public:
        
       std::vector<unsigned int> collision_pair;
         //bvh.CheckCollision(collision_pair,margin);
-      bvh->EdgeCollision(edge, collision_pair,offset);
+      bvh->EdgeCollision(edge, collision_pair,offset+0.5*margin);
 
       //std::cout<<collision_size<<"\n\n";
       
@@ -69,7 +71,7 @@ public:
 
             Eigen::RowVector3d _position=V.row(ob_id);
 
-            bool is_collided= CCD::GJKDCD(edge,_position, offset);  //cgal
+            bool is_collided= CCD::GJKDCD(edge,_position, offset+0.5*margin);  //cgal
             if(is_collided)
             {
                 return !valid;
@@ -77,7 +79,14 @@ public:
             
         }
 
-      
+      for(int i=0;i<(int)edges.size();i++)
+      {
+        bool is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
+        if(is_collided)
+        {
+            return !valid;
+        }
+      }
       
       
 
@@ -96,11 +105,13 @@ public:
     }
     
     Eigen::MatrixXd V;
+    std::vector<Eigen::MatrixXd> edges;
     BVH* bvh;
     
 };
 //OMPL
-OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::MatrixXd _V,
+OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, 
+          Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
            BVH& _bvh)
 {
   int dim=lowerBound.size();
@@ -122,7 +133,7 @@ OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::Matrix
   
   _stateInfo=ob::SpaceInformationPtr(new ob::SpaceInformation(_state));
 
-  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_bvh);
+  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_edges,_bvh);
   ob::MotionValidatorPtr mv(motion_validator);
   
   _stateInfo->setMotionValidator(mv);//std::make_shared<myMotionValidator>(_stateInfo));
@@ -154,7 +165,7 @@ void OMPL::getPath(std::vector<Eigen::Vector3d> &path) //const const
 }
 
 bool OMPL::planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal, 
-                      Eigen::MatrixXd _V,
+                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
                       BVH& _bvh, int time)//,std::function<bool(const Mesh&)> fn
 {
   ob::ProblemDefinitionPtr prob(new ob::ProblemDefinition(_stateInfo));
@@ -181,7 +192,7 @@ bool OMPL::planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal,
   prob->setGoalState(goalState.get());
     
     
-  myMotionValidator mv(_stateInfo,_V,_bvh);
+  myMotionValidator mv(_stateInfo,_V,_edges, _bvh);
   std::cout<<"test:"<<mv.checkMotion(startState.get(),goalState.get())<<std::endl;
     /*
     if(goalState->values)

@@ -35,10 +35,9 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
       std::cout<<minV<<"\n";
       std::cout<<maxV<<"\n";
       Eigen::VectorXd lowerBound, upperBound;
-      lowerBound=1.2*minV;
-      upperBound=1.2*maxV;
-      OMPL ompl(lowerBound, upperBound,
-                V,bvh);
+      lowerBound=1.5*minV;
+      upperBound=1.5*maxV;
+      
       
       std::vector<Eigen::Vector3d> path;
 
@@ -56,15 +55,15 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
       _start.resize(uav_num);
       _end.resize(uav_num); 
       
-      //start<<2.7,0,0.5;
-      //end<<-2.7,0,0.5;
-       _start[0]<<2.7,0,0.5;
-       _end[0]<<-2.7,0,-0.5;
+      _start[0]<<2.7,0,0.5;
+      _end[0]<<-2.7,0,0.5;
+       ////_start[0]<<0.3,0.5,0.5;
+       ////_end[0]<<-0.3,-0.5,-0.5;
 
-      //start<<2.7,0,-0.5;
-      //end<<-2.7,0,-0.5;
-       _start[1]<<2.7,0,-0.5;
-       _end[1]<<-2.7,0,0.5;
+      _start[1]<<2.7,0,-0.5;
+      _end[1]<<-2.7,0,-0.5;
+       ////_start[1]<<0.3,-0.5,0.5;
+       ////_end[1]<<-0.3,0.5,-0.5;
 
        _start[2]<<-2.5,0,0.5;
        _end[2]<<2.5,0,-0.5;
@@ -73,29 +72,40 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
       //end<<-2.7,0,-0.5;
        _start[3]<<-2.5,0,-0.5;
        _end[3]<<2.5,0,0.5;
+      std::vector<Eigen::MatrixXd> edges;
+      edges.clear();
       way_points_list.clear();
       for(int i=0;i<uav_num;i++)
       {
+        OMPL ompl(lowerBound, upperBound,
+                  V,edges,bvh);
         start=_start[i];
         end=_end[i];
-        if(ompl.planRRT(start, end, V, bvh))
+        if(ompl.planRRT(start, end, V,edges, bvh))
         {
           ompl.getPath(path);
         }
-
+        for(int j=0;j<(int)path.size()-1;j++)
+        {
+           Eigen::MatrixXd edge;
+           edge.resize(2,3);
+           edge.row(0)=path[j].transpose();
+           edge.row(1)=path[j+1].transpose();
+           edges.push_back(edge);
+        }
         way_points_list.push_back(path);
       }
       std::cout<<"ompl end\n";
       int max_size=0;
       for(int i=0;i<uav_num;i++)
       {
-        if(max_size<way_points_list[i].size())
+        if(max_size<(int)way_points_list[i].size())
           max_size=way_points_list[i].size();
       } 
 
       for(int i=0;i<uav_num;i++)
       { 
-        if(way_points_list[i].size()<max_size)
+        if((int)way_points_list[i].size()<max_size)
         {
           int size=way_points_list[i].size();
           int len=max_size-size;
@@ -112,19 +122,20 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
 }
 
 void init_variable(const std::vector<std::vector<Eigen::Vector3d>>& way_points_list,
-                   std::vector<Data>& spline_list, std::vector<double>& piece_time_list,
+                   std::vector<Data>& spline_list, double& piece_time,
                    std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list,
                    std::vector<Data>& p_lambda_list, std::vector<Eigen::VectorXd>& t_lambda_list)
 {
     
   
-  spline_list.resize(uav_num); piece_time_list.resize(uav_num);
+  spline_list.resize(uav_num); 
   p_slack_list.resize(uav_num); t_slack_list.resize(uav_num);
   p_lambda_list.resize(uav_num); t_lambda_list.resize(uav_num);
-
+  
+  piece_time=20;
   for(int i=0;i<uav_num;i++)
   {
-      double piece_time=20;
+      
 
       Data spline;
       spline.resize(trajectory_num,3);
@@ -163,7 +174,7 @@ void init_variable(const std::vector<std::vector<Eigen::Vector3d>>& way_points_l
 
       
 
-      spline_list[i]=spline; piece_time_list[i]=piece_time;
+      spline_list[i]=spline; 
       p_slack_list[i]=p_slack; t_slack_list[i]=t_slack;
       p_lambda_list[i]=p_lambda; t_lambda_list[i]=t_lambda;
   }
@@ -393,12 +404,12 @@ int main(int argc, char *argv[])
   
   std::cout<<convert_list[0]<<std::endl;
 
-  std::vector<Data> spline_list; std::vector<double> piece_time_list;
+  std::vector<Data> spline_list; double piece_time;
   std::vector<Data> p_slack_list; std::vector<Eigen::VectorXd> t_slack_list;
   std::vector<Data> p_lambda_list; std::vector<Eigen::VectorXd> t_lambda_list;
   
   init_variable( way_points_list,
-                 spline_list,  piece_time_list,
+                 spline_list,  piece_time,
                  p_slack_list,  t_slack_list,
                  p_lambda_list, t_lambda_list);
 
@@ -599,7 +610,7 @@ int main(int argc, char *argv[])
               
          
             
-          Optimization3D_multi::optimization(spline_list, piece_time_list, 
+          Optimization3D_multi::optimization(spline_list, piece_time, 
                                               p_slack_list, t_slack_list, 
                                               p_lambda_list, t_lambda_list,
                                               vertex_list, bvh);
