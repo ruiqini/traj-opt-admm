@@ -93,7 +93,7 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
               igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
 }
 
-void way_point_init(const std::string& mesh_file, Data& spline)
+void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& way_points)
 {
     std::string line;
     std::ifstream myfile ("init/" +mesh_file + "_init_file.txt");
@@ -116,43 +116,11 @@ void way_point_init(const std::string& mesh_file, Data& spline)
       //piece_num=i-1;
     }
 
-    std::vector<Eigen::Vector3d> way_points;
     way_points=read_points;
     
-    piece_num=way_points.size()-1;
-    time_weight.resize(piece_num); 
-    whole_weight=0;
-    for(int i=0;i<piece_num;i++)
-    {
-      time_weight[i]=1;
-      //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
-      
-      whole_weight+=time_weight[i];
-    }
-    
-
-    trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
-    spline.resize(trajectory_num,3);
-
-    spline.row(0)=way_points[0].transpose();
-    for(int i=0;i<piece_num;i++)
-    { 
-      
-      Eigen::Vector3d head=0.9*way_points[i]+0.1*way_points[i+1];
-      Eigen::Vector3d tail=0.9*way_points[i+1]+0.1*way_points[i];
-      spline.row(i*(order_num-2)+1)=way_points[i].transpose();
-      for(int j=1;j<order_num-2;j++)
-      {
-        spline.row(j+i*(order_num-2)+1)=double(order_num-3-j)/(order_num-4)*head.transpose()
-                                         +(double)(j-1)/(order_num-4)*tail.transpose();
-      }
-      spline.row((i+1)*(order_num-2)+1)=way_points[i+1].transpose();
-    }
-    spline.row(trajectory_num-1)=way_points[piece_num].transpose();
-
 }
 
-void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, Data& spline)
+void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& way_points)
 {
       Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
       Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
@@ -164,7 +132,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, Data& spline)
       OMPL ompl(lowerBound, upperBound,
                 V,bvh);
       
-      std::vector<Eigen::VectorXd> path;
+      std::vector<Eigen::Vector3d> path;
 
       Eigen::Vector3d start,end;
       /*
@@ -184,35 +152,24 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, Data& spline)
       end(0)= -2.7;
       end(1)= 0;
       end(2)= 0;
-      Eigen::MatrixXd edge(2,3);
-      edge.row(0)=start.transpose();
-      edge.row(1)=end.transpose();
-      std::vector<unsigned int> collision_pair;
-        //bvh.CheckCollision(collision_pair,margin);
-      bvh.EdgeCollision(edge, collision_pair,offset+margin);
-
-      int collision_size=collision_pair.size();
-      std::cout<<"main:"<<collision_size<<"\n\n";
-
-    if(ompl.planRRT(start,end, V, bvh))
-    {
-      ompl.getPath(path);
-    }
-
-    std::vector<Eigen::VectorXd> way_points;
-    way_points=path;
-    piece_num=way_points.size()-1;
-    time_weight.resize(piece_num); 
-    whole_weight=0;
-    for(int i=0;i<piece_num;i++)
-    {
-      time_weight[i]=1;
-      //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
       
-      whole_weight+=time_weight[i];
+      if(ompl.planRRT(start, end, V, bvh))
+      {
+        ompl.getPath(path);
+      }
 
-    }
+      way_points=path;
     
+    
+  
+}
+
+void init_variable(const std::vector<Eigen::Vector3d>& way_points,
+                   const std::vector<Eigen::RowVector3d>& vertex_list, 
+                   Data& spline, Data& p_slack, Data& p_lambda, 
+                   double piece_time, Eigen::VectorXd& t_slack, Eigen::VectorXd& t_lambda)
+{
+
     trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
     spline.resize(trajectory_num,3);
 
@@ -231,13 +188,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, Data& spline)
       spline.row((i+1)*(order_num-2)+1)=way_points[i+1].transpose();
     }
     spline.row(trajectory_num-1)=way_points[piece_num].transpose();
-  
-}
 
-void init_variable(const std::vector<Eigen::RowVector3d>& vertex_list, 
-                   Data& spline,Data& p_slack,Data& p_lambda, 
-                   double piece_time, Eigen::VectorXd& t_slack, Eigen::VectorXd& t_lambda)
-{
   spline.row(1)=spline.row(0);
   spline.row(trajectory_num-2)=spline.row(trajectory_num-1);
   
@@ -409,15 +360,28 @@ int main(int argc, char *argv[])
 
   std::cout<<"time_bvh:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
      
-  Data spline;
+ 
+  std::vector<Eigen::Vector3d> way_points;
+
+  uav_num=1;
   
   if(init_spline==1)
   {
-    way_point_init( mesh_file, spline);
+    way_point_init( mesh_file, way_points);
   }
   else if(init_spline==2)
   {
-    ompl_init( V, bvh,  spline);
+    ompl_init( V, bvh,  way_points);
+  }
+  piece_num=way_points.size()-1;
+  time_weight.resize(piece_num); 
+  whole_weight=0;
+  for(int i=0;i<piece_num;i++)
+  {
+    time_weight[i]=1;
+    //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
+    
+    whole_weight+=time_weight[i];
   }
 
   combination = Combination<40>::value();
@@ -429,6 +393,8 @@ int main(int argc, char *argv[])
   ks=1e-8;//1e-3
   kt=1;
 
+  
+
   double piece_time=20;//init_time;//20
 
   Conversion<order_num>::convert_matrix();
@@ -437,9 +403,9 @@ int main(int argc, char *argv[])
   //std::cout<<M_head<<std::endl;
   //std::cout<<M_tail<<std::endl;
   //M_convert/=double(Factorial<order_num>::value());
-  Data p_slack, p_lambda; 
+  Data spline, p_slack, p_lambda; 
   Eigen::VectorXd t_slack, t_lambda;
-  init_variable(vertex_list, 
+  init_variable(way_points, vertex_list, 
                 spline,p_slack,p_lambda, 
                 piece_time,t_slack,t_lambda);
   
@@ -552,28 +518,36 @@ int main(int argc, char *argv[])
       
       Eigen::MatrixXd C=V;
       
-      Eigen::RowVector3d C0(0.2,0.2,0.8);
-      Eigen::RowVector3d C1(0.8,0.2,0.2);
-      Eigen::RowVector3d C2(0.2,0.8,0.6);
+      Eigen::RowVector3d C0(0.8,0.2,0.2);
+      Eigen::RowVector3d C1(0.2,0.8,0.2);
+      Eigen::RowVector3d C2(0.2,0.2,0.8);
+      Eigen::RowVector3d C3(0.2,0.8,0.8);
+      Eigen::RowVector3d C4(0.8,0.2,0.8);
+      Eigen::RowVector3d C5(0.8,0.8,0.2);
       
-      double up=V.col(2).maxCoeff();
-      double down=V.col(2).minCoeff();
+     
 
       double x_up=V.col(0).maxCoeff();
       double x_down=V.col(0).minCoeff();
 
       double y_up=V.col(1).maxCoeff();
       double y_down=V.col(1).minCoeff();
-      double _up=x_up+y_up;
-      double _down=x_down+y_down;
+
+      double z_up=V.col(2).maxCoeff();
+      double z_down=V.col(2).minCoeff();
       
       for(int i=0;i<V.rows();i++)
       {
-        double l=V(i,2);
-        Eigen::RowVector3d tmp=((l-down)*C0+(up-l)*C2)/(up-down);
+       
+        double x=V(i,0);
+        double y=V(i,1);
+        double z=V(i,2);
 
-        double _l=V(i,0)+V(i,1);
-        C.row(i)=((_l-_down)*tmp+(_up-_l)*C1)/(_up-_down);
+        Eigen::RowVector3d x_tmp=((x-x_down)*C0+(x_up-x)*C3)/(x_up-x_down);
+        Eigen::RowVector3d y_tmp=((y-y_down)*C1+(y_up-y)*C4)/(y_up-y_down);
+        Eigen::RowVector3d z_tmp=((z-z_down)*C2+(z_up-z)*C5)/(z_up-z_down);
+
+        C.row(i)=(x_tmp+y_tmp+z_tmp)/3.0;
       }
       viewer.data().set_points(V,C);
 
@@ -701,12 +675,7 @@ int main(int argc, char *argv[])
 
   }
   
-  //std::cout<<F_<<std::endl;
-  /*
-
   
-  */
- 
   return 0;
 }
 

@@ -2,7 +2,7 @@
 #define BVH_H
 
 #include "HighOrderCCD/Utils/CCDUtils.h"
-
+#include "HighOrderCCD/CCD/CCD.h"
 #include "src/AABB.h"
 
 
@@ -27,6 +27,8 @@ class BVH
     void InitPointcloud(const Eigen::MatrixXd& V);
 
     void EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_pair, double margin);
+    
+    void SelfEdgeCollision(const std::vector<Data>& edges, std::vector<id_pair>& collision_pairs, double margin);
 
     void DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>>& collision_pairs, double margin);
 

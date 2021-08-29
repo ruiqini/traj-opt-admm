@@ -538,31 +538,15 @@ public:
       step*=0.8;
       piece_time=init_time+step*t_direction;
     }
-        
+    /*    
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
                " "<<lambda*Energy::plane_barrier_energy(spline+step*direction,c_lists,d_lists)<<
                " "<<lambda*Energy::bound_energy(spline+step*direction,piece_time)<<
                " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
-               
+     */          
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
-
-    Eigen::Vector3d c;
-    double d;
-    Eigen::RowVector3d _position=vertex_list[19252];
-    int sp_id=std::get<0>(subdivide_tree[23]);
-
-    Eigen::MatrixXd basis=std::get<2>(subdivide_tree[23]);
-    
-    Eigen::MatrixXd bz;
-    bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
-    
-    Eigen::MatrixXd P; P.noalias()=basis*bz;
-    c=seperate_c[23][19252]; 
-    d=seperate_d[23][19252];
-    std::cout<<Optimal_plane::barrier_energy(P, _position, 
-                                 c,  d)<<"\n";
 
   }
 

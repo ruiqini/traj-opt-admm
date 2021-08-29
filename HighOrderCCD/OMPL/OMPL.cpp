@@ -42,25 +42,26 @@ public:
       double* gDouble=gv->values;
       //Cold ret=Eigen::Map<const Eigen::Matrix<double,-1,1>>(sv->values,_body.nrDOF()).cast<scalarD>();
       //int num=3;
+      
       Eigen::MatrixXd edge(2,3);
-      edge(0,0)=sDouble[0];
-      edge(0,1)=sDouble[1];
-      edge(0,2)=sDouble[2];
 
-      edge(1,0)=gDouble[0];
-      edge(1,1)=gDouble[1];
-      edge(1,2)=gDouble[2];
-      std::cout<<edge<<"\n\n";
+      
+        edge(0,0)=sDouble[0];
+        edge(0,1)=sDouble[1];
+        edge(0,2)=sDouble[2];
+
+        edge(1,0)=gDouble[0];
+        edge(1,1)=gDouble[1];
+        edge(1,2)=gDouble[2];
+       
       std::vector<unsigned int> collision_pair;
         //bvh.CheckCollision(collision_pair,margin);
-      bvh->EdgeCollision(edge, collision_pair,offset+margin);
+      bvh->EdgeCollision(edge, collision_pair,offset);
 
-      int collision_size=collision_pair.size();
-      std::cout<<collision_size<<"\n\n";
-      if(collision_size==0)
-         return valid;
-      else
-      {
+      //std::cout<<collision_size<<"\n\n";
+      
+        int collision_size=collision_pair.size();
+
         for(int i=0;i<collision_size;i++)
         {
             //int ob_id=*it;
@@ -68,7 +69,7 @@ public:
 
             Eigen::RowVector3d _position=V.row(ob_id);
 
-            bool is_collided= CCD::GJKDCD(edge,_position, offset+margin);  //cgal
+            bool is_collided= CCD::GJKDCD(edge,_position, offset);  //cgal
             if(is_collided)
             {
                 return !valid;
@@ -76,7 +77,9 @@ public:
             
         }
 
-      }
+      
+      
+      
 
       return valid;
       //std::cout<<"check3"<<std::endl;
@@ -103,12 +106,17 @@ OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::Matrix
   int dim=lowerBound.size();
   _state=ob::StateSpacePtr(new ob::RealVectorStateSpace(dim));
   ompl::base::RealVectorBounds bounds(dim);
-  //lower
-  for(int i=0; i<dim; i++)
-    bounds.setLow(i,lowerBound(i));
-  //upper
-  for(int i=0; i<dim; i++)
-    bounds.setHigh(i,upperBound(i));
+  
+  
+    //lower
+    for(int i=0; i<dim; i++)
+      bounds.setLow(i,lowerBound(i));
+    //upper
+    for(int i=0; i<dim; i++)
+      bounds.setHigh(i,upperBound(i));
+
+  
+  
   //setup
   _state->as<ob::RealVectorStateSpace>()->setBounds(bounds);
   
@@ -140,12 +148,12 @@ bool OMPL::isValid(const ob::State* s)
 }
 */
 
-void OMPL::getPath(std::vector<Eigen::VectorXd> &path) //const const 
+void OMPL::getPath(std::vector<Eigen::Vector3d> &path) //const const 
 {
   path=_path;
 }
 
-bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal, 
+bool OMPL::planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal, 
                       Eigen::MatrixXd _V,
                       BVH& _bvh, int time)//,std::function<bool(const Mesh&)> fn
 {
@@ -155,10 +163,14 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
   std::shared_ptr<ob::RealVectorStateSpace::StateType> goalState(new ob::RealVectorStateSpace::StateType);
   std::shared_ptr<ob::RealVectorStateSpace::StateType> startState(new ob::RealVectorStateSpace::StateType);
   
+ 
+  
   startState->values=start.data();
+  
   prob->addStartState(startState.get());
   //set goal
-    std::cout<<"goal"<<std::endl;
+  
+  std::cout<<"goal"<<std::endl;
 
   
   goalState->values=NULL;
@@ -203,18 +215,24 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
 
     const std::vector< ob::State* > &states = path.getStates();
     ob::State *state;
-    int dim=start.size();
-    for( size_t i = 0 ; i < states.size( ) ; ++i )
-    {
+    int dim=3;
+    _path.clear();
+    
+    Eigen::VectorXd ss(dim);
+    
+      for( size_t i = 0 ; i < states.size( ) ; ++i )
+      {
         state = states[ i ]->as< ob::State >( );
 
-        Eigen::VectorXd ss(dim);
         ss(0) = state->as<ob::RealVectorStateSpace::StateType>()->values[0];
         ss(1) = state->as<ob::RealVectorStateSpace::StateType>()->values[1];
         ss(2) = state->as<ob::RealVectorStateSpace::StateType>()->values[2];
-       
+    
         _path.push_back(ss);
-    }
+
+      }
+    
+    
     
     return true;
   } else {

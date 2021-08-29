@@ -101,6 +101,9 @@ void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_p
        
     std::vector<Eigen::RowVector3d> P(2);
 
+    
+
+    
         for(int k=0;k<dim;k++)
         {
           upperBound[k]=-INFINITY;
@@ -126,6 +129,20 @@ void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_p
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
         collision_pair=pc_tree.query(convex, margin);
+    
+
+}
+
+void BVH::SelfEdgeCollision(const std::vector<Data>& edges, std::vector<id_pair>& collision_pairs, double margin)
+{
+   for(int j0=0;j0<uav_num;j0++)
+   {
+      for(int j1=j0+1;j1<uav_num;j1++)
+      {
+        if(CCD::KDOPDCD(edges[j0],edges[j1], margin))
+           collision_pairs.push_back(std::make_pair(j0,j1));
+      }
+   }
 
 }
 

@@ -5,6 +5,7 @@
 #include "HighOrderCCD/Utils/CCDUtils.h"
 
 #include "HighOrderCCD/Optimization/Optimization3D_multi.h"
+#include "HighOrderCCD/OMPL/OMPL.h"
 
 #include "lib/nlohmann/json.hpp"    // https://github.com/nlohmann/json/tree/develop/single_include/nlohmann/json.hpp
 
@@ -27,140 +28,95 @@ Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now
     return ret;  
 }
 
-int main(int argc, char *argv[])
+void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
 {
-  if (argc < 2)
-	{
-		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
-		return -1;
-  }
+      Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
+      Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
+      std::cout<<minV<<"\n";
+      std::cout<<maxV<<"\n";
+      Eigen::VectorXd lowerBound, upperBound;
+      lowerBound=1.2*minV;
+      upperBound=1.2*maxV;
+      OMPL ompl(lowerBound, upperBound,
+                V,bvh);
+      
+      std::vector<Eigen::Vector3d> path;
 
-  #if 0
-  
-  #else
- 
-  igl::opengl::glfw::Viewer viewer;
-  
-  viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
-  viewer.core().is_animating = true;
-  viewer.core().camera_zoom = 2.0f;
-  viewer.data().line_width = 1.0f;
-  viewer.data().point_size = 3.0f;
+      Eigen::Vector3d start,end;
+      /*
+      start(0)= 2.7;
+      start(1)= 0;
+      start(2)= 0;
 
-  std::ifstream fin("Config File/3D.json");   
-  json j = json::parse(fin);
-	fin.close();
+      end(0)= -2.7;
+      end(1)= 0;
+      end(2)= 0;
+      */
+      std::vector<Eigen::Vector3d> _start,_end;
+      _start.resize(uav_num);
+      _end.resize(uav_num); 
+      
+      //start<<2.7,0,0.5;
+      //end<<-2.7,0,0.5;
+       _start[0]<<2.7,0,0.5;
+       _end[0]<<-2.7,0,-0.5;
 
+      //start<<2.7,0,-0.5;
+      //end<<-2.7,0,-0.5;
+       _start[1]<<2.7,0,-0.5;
+       _end[1]<<-2.7,0,0.5;
 
-  lambda=j["lambda"].get<double>();
+       _start[2]<<-2.5,0,0.5;
+       _end[2]<<2.5,0,-0.5;
 
-  epsilon=j["epsilon"].get<double>();
-  margin=j["margin"].get<double>();//d hat
-  automove = j["auto"].get<int>();
+      //start<<2.7,0,-0.5;
+      //end<<-2.7,0,-0.5;
+       _start[3]<<-2.5,0,-0.5;
+       _end[3]<<2.5,0,0.5;
+      way_points_list.clear();
+      for(int i=0;i<uav_num;i++)
+      {
+        start=_start[i];
+        end=_end[i];
+        if(ompl.planRRT(start, end, V, bvh))
+        {
+          ompl.getPath(path);
+        }
 
-  is_optimal_plane=j["optimal_plane"].get<int>();
+        way_points_list.push_back(path);
+      }
+      std::cout<<"ompl end\n";
+      int max_size=0;
+      for(int i=0;i<uav_num;i++)
+      {
+        if(max_size<way_points_list[i].size())
+          max_size=way_points_list[i].size();
+      } 
 
+      for(int i=0;i<uav_num;i++)
+      { 
+        if(way_points_list[i].size()<max_size)
+        {
+          int size=way_points_list[i].size();
+          int len=max_size-size;
+          for(int j=0;j<len;j++)
+          {
+            Eigen::Vector3d pos=0.5*(way_points_list[i][size-1-j-1] + way_points_list[i][size-1-j]);
+            way_points_list[i].insert( way_points_list[i].begin() + size-1-j , pos );
+          }
+            
+          std::cout<<way_points_list[i].size()<<" "<<max_size<<"\n";
+        }
+      }
+      
+}
 
-  //int init_spline=j["init"].get<int>();
-  
-  offset = j["offset"].get<double>();
-
-  res = j["res"].get<int>();
-
-  int if_exit=j["exit"].get<int>();
-
-  int if_init_ob=j["init_ob"].get<int>();  
-
-  double stop=j["stop"].get<double>();
-
-  mu=j["mu"].get<double>();
-  //lambda=1.0/margin2;
-
-  double whole_time=0;
-  
-  int dim = kdop_axis.size();
-  kdop_matrix.resize(3, dim);
-  for(int k=0;k<dim;k++)
-  {
-    kdop_axis[k].normalize();
-    kdop_matrix.col(k) = kdop_axis[k];
-  }
-
-  aabb_matrix.resize(3, 3);
-  for(int k=0;k<3;k++)
-  {
-    aabb_matrix.col(k) = aabb_axis[k];
-  }
-  //lambda/=epsilon;
-
-  Eigen::MatrixXd V, BV;
-  Eigen::MatrixXi F, BF;
-  
-  const std::string mesh_file = argv[1];
-  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-  
-  vel_limit=2.0;
-  acc_limit=2.0;
+void init_variable(const std::vector<std::vector<Eigen::Vector3d>>& way_points_list,
+                   std::vector<Data>& spline_list, std::vector<double>& piece_time_list,
+                   std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list,
+                   std::vector<Data>& p_lambda_list, std::vector<Eigen::VectorXd>& t_lambda_list)
+{
     
-  result_file.open ("result/" +mesh_file + "_result_file_multi.txt");
-  
-  
-  uav_num=4;//2
-  piece_num=3;
-  trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
-
-  time_weight.resize(piece_num);
-  whole_weight=0;
-  for(int k=0;k<piece_num;k++)
-  {
-    time_weight[k]=1;
-    //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
-    whole_weight+=time_weight[k];
-  }
-  std::vector<std::vector<Eigen::RowVector3d>> way_points_list;
-  way_points_list.resize(uav_num);
-  
-  way_points_list[0].push_back(Eigen::Vector3d(2, 2 ,1));
-  way_points_list[0].push_back(Eigen::Vector3d(1, 0, -0.2));
-  way_points_list[0].push_back(Eigen::Vector3d(-2, 0, -0.2));
-  way_points_list[0].push_back(Eigen::Vector3d(-2, -2, -1));
-
-  way_points_list[1].push_back(Eigen::Vector3d(2.5, 2 ,-1));
-  way_points_list[1].push_back(Eigen::Vector3d(2, 0, 0.2));
-  way_points_list[1].push_back(Eigen::Vector3d(-2, 0, 0.2));
-  way_points_list[1].push_back(Eigen::Vector3d(-2.5, -2, 1));
-
-  way_points_list[2].push_back(Eigen::Vector3d(-2, 2 ,1));
-  way_points_list[2].push_back(Eigen::Vector3d(-1, 0, -0.4));
-  way_points_list[2].push_back(Eigen::Vector3d(2, 0, -0.4));
-  way_points_list[2].push_back(Eigen::Vector3d(2, -2, -1));
-
-  way_points_list[3].push_back(Eigen::Vector3d(-2.5, 2 ,-1));
-  way_points_list[3].push_back(Eigen::Vector3d(-2, 0, 0.4));
-  way_points_list[3].push_back(Eigen::Vector3d(2, 0, 0.4));
-  way_points_list[3].push_back(Eigen::Vector3d(2.5, -2, 1));
-
-
-  combination = Combination<40>::value();
-
-  //Eigen::MatrixXd V,O;
-  
-  //std::vector<Eigen::MatrixXd> p0,p1,d0;
-  //V*=0.000000001;
-  int num=1000000, turns=0;
-
-  gnorm=1;
-  
-  ks=1e-3;
-  kt=1;
-
-  Conversion<order_num>::convert_matrix();
-  
-  std::cout<<convert_list[0]<<std::endl;
-
-  std::vector<Data> spline_list; std::vector<double> piece_time_list;
-  std::vector<Data> p_slack_list; std::vector<Eigen::VectorXd> t_slack_list;
-  std::vector<Data> p_lambda_list; std::vector<Eigen::VectorXd> t_lambda_list;
   
   spline_list.resize(uav_num); piece_time_list.resize(uav_num);
   p_slack_list.resize(uav_num); t_slack_list.resize(uav_num);
@@ -173,17 +129,18 @@ int main(int argc, char *argv[])
       Data spline;
       spline.resize(trajectory_num,3);
       
-      std::vector<Eigen::RowVector3d> way_points=way_points_list[i];
+      std::vector<Eigen::Vector3d> way_points=way_points_list[i];
 
-      spline.row(0)=way_points[0];
+      spline.row(0)=way_points[0].transpose();
       for(int k=0;k<piece_num;k++)
       {
         for(int j=0;j<=order_num-2;j++)
         {
-          spline.row(j+k*(order_num-2)+1)=double(order_num-2-j)/(order_num-2)*way_points[k]+(double)j/(order_num-2)*way_points[k+1];
+          spline.row(j+k*(order_num-2)+1)=double(order_num-2-j)/(order_num-2)*way_points[k].transpose()+
+                                          (double)j/(order_num-2)*way_points[k+1].transpose();
         }
       }
-      spline.row(trajectory_num-1)=way_points[piece_num];
+      spline.row(trajectory_num-1)=way_points[piece_num].transpose();
 
       spline.row(1)=spline.row(0);
       spline.row(trajectory_num-2)=spline.row(trajectory_num-1);
@@ -277,6 +234,74 @@ int main(int argc, char *argv[])
     }
   }
 
+
+}
+
+int main(int argc, char *argv[])
+{
+  if (argc < 2)
+	{
+		std::cerr << "Syntax: " << argv[0] << " <mesh file>" << std::endl;
+		return -1;
+  }
+
+
+  std::ifstream fin("Config File/3D.json");   
+  json j = json::parse(fin);
+	fin.close();
+
+
+  lambda=j["lambda"].get<double>();
+
+  epsilon=j["epsilon"].get<double>();
+  margin=j["margin"].get<double>();//d hat
+  automove = j["auto"].get<int>();
+
+  is_optimal_plane=j["optimal_plane"].get<int>();
+
+  int init_spline=j["init"].get<int>();
+  
+  offset = j["offset"].get<double>();
+
+  res = j["res"].get<int>();
+
+  int if_exit=j["exit"].get<int>();
+
+  int if_init_ob=j["init_ob"].get<int>();  
+
+  double stop=j["stop"].get<double>();
+
+  mu=j["mu"].get<double>();
+  //lambda=1.0/margin2;
+
+  int gui=j["gui"].get<int>();
+    
+  vel_limit=j["vel_limit"].get<double>();
+  acc_limit=j["acc_limit"].get<double>();
+
+  double whole_time=0;
+  
+  int dim = kdop_axis.size();
+  kdop_matrix.resize(3, dim);
+  for(int k=0;k<dim;k++)
+  {
+    kdop_axis[k].normalize();
+    kdop_matrix.col(k) = kdop_axis[k];
+  }
+
+  aabb_matrix.resize(3, 3);
+  for(int k=0;k<3;k++)
+  {
+    aabb_matrix.col(k) = aabb_axis[k];
+  }
+  //lambda/=epsilon;
+
+  Eigen::MatrixXd V, BV;
+  Eigen::MatrixXi F, BF;
+  
+  const std::string mesh_file = argv[1];
+  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
+
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
@@ -295,7 +320,97 @@ int main(int argc, char *argv[])
   clock_t time2 = clock();
 
   std::cout<<"time_obstacle:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+  
+  result_file.open ("result/" +mesh_file + "_result_file_multi.txt");
+  
+  
+  uav_num=4;//2
+  
+  /*
+  piece_num=3;
+  trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
+
+  time_weight.resize(piece_num);
+  whole_weight=0;
+  for(int k=0;k<piece_num;k++)
+  {
+    time_weight[k]=1;
+    //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
+    whole_weight+=time_weight[k];
+  }
+  std::vector<std::vector<Eigen::RowVector3d>> way_points_list;
+  way_points_list.resize(uav_num);
+  
+  way_points_list[0].push_back(Eigen::Vector3d(2, 2 ,1));
+  way_points_list[0].push_back(Eigen::Vector3d(1, 0, -0.2));
+  way_points_list[0].push_back(Eigen::Vector3d(-2, 0, -0.2));
+  way_points_list[0].push_back(Eigen::Vector3d(-2, -2, -1));
+
+  way_points_list[1].push_back(Eigen::Vector3d(2.5, 2 ,-1));
+  way_points_list[1].push_back(Eigen::Vector3d(2, 0, 0.2));
+  way_points_list[1].push_back(Eigen::Vector3d(-2, 0, 0.2));
+  way_points_list[1].push_back(Eigen::Vector3d(-2.5, -2, 1));
+
+  way_points_list[2].push_back(Eigen::Vector3d(-2, 2 ,1));
+  way_points_list[2].push_back(Eigen::Vector3d(-1, 0, -0.4));
+  way_points_list[2].push_back(Eigen::Vector3d(2, 0, -0.4));
+  way_points_list[2].push_back(Eigen::Vector3d(2, -2, -1));
+
+  way_points_list[3].push_back(Eigen::Vector3d(-2.5, 2 ,-1));
+  way_points_list[3].push_back(Eigen::Vector3d(-2, 0, 0.4));
+  way_points_list[3].push_back(Eigen::Vector3d(2, 0, 0.4));
+  way_points_list[3].push_back(Eigen::Vector3d(2.5, -2, 1));
+  */
+  std::vector<std::vector<Eigen::Vector3d>> way_points_list;
+  ompl_init(V,bvh, way_points_list);
+
+  piece_num=way_points_list[0].size()-1;
+  time_weight.resize(piece_num); 
+  whole_weight=0;
+  for(int i=0;i<piece_num;i++)
+  {
+    time_weight[i]=1;
+    //time_weight[i]=(way_points[i+1]-way_points[i]).norm()/vel_limit;
+    
+    whole_weight+=time_weight[i];
+  }
+  trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
+
+  combination = Combination<40>::value();
+
+  //Eigen::MatrixXd V,O;
+  
+  //std::vector<Eigen::MatrixXd> p0,p1,d0;
+  //V*=0.000000001;
+  int num=1000000, turns=0;
+
+  gnorm=1;
+  
+  ks=1e-3;
+  kt=1;
+
+  Conversion<order_num>::convert_matrix();
+  
+  std::cout<<convert_list[0]<<std::endl;
+
+  std::vector<Data> spline_list; std::vector<double> piece_time_list;
+  std::vector<Data> p_slack_list; std::vector<Eigen::VectorXd> t_slack_list;
+  std::vector<Data> p_lambda_list; std::vector<Eigen::VectorXd> t_lambda_list;
+  
+  init_variable( way_points_list,
+                 spline_list,  piece_time_list,
+                 p_slack_list,  t_slack_list,
+                 p_lambda_list, t_lambda_list);
+
   //std::cout<<F_<<std::endl;
+
+  igl::opengl::glfw::Viewer viewer;
+  
+  viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
+  viewer.core().is_animating = true;
+  viewer.core().camera_zoom = 2.0f;
+  viewer.data().line_width = 1.0f;
+  viewer.data().point_size = 3.0f;
   
   Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IR(640,800);
   Eigen::Matrix<unsigned char,Eigen::Dynamic,Eigen::Dynamic> IG(640,800);
@@ -343,9 +458,36 @@ int main(int argc, char *argv[])
 
     return true;
   };
-  viewer.data().line_width = 1.0f;
-        
-  viewer.data().set_mesh(V,F);
+      
+      viewer.data().line_width = 5.0f;
+      viewer.data().point_size = 5.0f;
+      
+      Eigen::MatrixXd C=V;
+      
+      Eigen::RowVector3d C0(0.2,0.2,0.8);
+      Eigen::RowVector3d C1(0.8,0.2,0.2);
+      Eigen::RowVector3d C2(0.2,0.8,0.6);
+      
+      double up=V.col(2).maxCoeff();
+      double down=V.col(2).minCoeff();
+
+      double x_up=V.col(0).maxCoeff();
+      double x_down=V.col(0).minCoeff();
+
+      double y_up=V.col(1).maxCoeff();
+      double y_down=V.col(1).minCoeff();
+      double _up=x_up+y_up;
+      double _down=x_down+y_down;
+      
+      for(int i=0;i<V.rows();i++)
+      {
+        double l=V(i,2);
+        Eigen::RowVector3d tmp=((l-down)*C0+(up-l)*C2)/(up-down);
+
+        double _l=V(i,0)+V(i,1);
+        C.row(i)=((_l-_down)*tmp+(_up-_l)*C1)/(_up-_down);
+      }
+      viewer.data().set_points(V,C);
 
   for(unsigned int k=0;k<subdivide_tree.size();k++)
   {
@@ -484,7 +626,6 @@ int main(int argc, char *argv[])
   
   viewer.launch();
 
-  #endif
   return 0;
 }
 

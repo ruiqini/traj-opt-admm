@@ -53,7 +53,7 @@ public:
 
       std::vector<Data> direction_list; direction_list.resize(uav_num);
       std::vector<double> t_direction_list; t_direction_list.resize(uav_num);
-      
+      gnorm=0;
       clock_t time0 = clock();
       for(int i=0;i<uav_num;i++)
       {
@@ -68,7 +68,8 @@ public:
         direction_list[i]=direction;
         t_direction_list[i]=t_direction;
       }
-
+      gnorm/=double(uav_num);
+      
       std::vector<double> step_list; 
 
       Step::self_step(spline_list, direction_list,step_list, bvh);
@@ -535,7 +536,7 @@ public:
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl;
     
-    gnorm=ng0.norm();
+    gnorm+=ng0.norm();
     //std::cout<<"gnorm:"<<gnorm<<std::endl;
   }
 
@@ -586,6 +587,7 @@ public:
       piece_time=init_time+step*t_direction;
     }
     
+
     
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
