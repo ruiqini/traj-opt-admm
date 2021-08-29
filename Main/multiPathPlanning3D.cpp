@@ -40,6 +40,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
       
       
       std::vector<Eigen::Vector3d> path;
+      std::vector<Eigen::Vector3d> tmp_path;
 
       Eigen::Vector3d start,end;
       /*
@@ -85,17 +86,87 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
         {
           ompl.getPath(path);
         }
-        for(int j=0;j<(int)path.size()-1;j++)
+
+        tmp_path.clear();
+        tmp_path.push_back(path[0]);
+        int j_iter=0;
+        while(j_iter<(int)path.size()-1)
         {
            Eigen::MatrixXd edge;
            edge.resize(2,3);
-           edge.row(0)=path[j].transpose();
-           edge.row(1)=path[j+1].transpose();
+           edge.row(0)=path[j_iter].transpose();
+           if(j_iter<(int)path.size()-2)
+            edge.row(1)=path[j_iter+2].transpose();
+           else
+           {
+             tmp_path.push_back(path[j_iter+1]);
+             break;
+           }
+            
+           std::vector<unsigned int> collision_pair;
+           bvh.EdgeCollision(edge, collision_pair,offset+0.5*margin);
+
+            
+           int collision_size=collision_pair.size();
+           bool is_collided=false;
+              for(int i=0;i<collision_size;i++)
+              {
+                  //int ob_id=*it;
+                  int ob_id=collision_pair[i];
+
+                  Eigen::RowVector3d _position=V.row(ob_id);
+
+                  is_collided= CCD::GJKDCD(edge,_position, offset+0.5*margin);  //cgal
+                  if(is_collided)
+                  {
+                    break;
+                  }     
+                  
+              }
+
+              if(is_collided)
+              {
+                tmp_path.push_back(path[j_iter+1]);
+                j_iter++;
+                continue;
+              } 
+
+              for(int i=0;i<(int)edges.size();i++)
+              {
+                is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
+                if(is_collided)
+                {
+                  break;
+                }
+              }
+
+              if(is_collided)
+              {
+                tmp_path.push_back(path[j_iter+1]);
+                j_iter++;
+                continue;
+              } 
+
+              if(!is_collided)
+              {
+                tmp_path.push_back(path[j_iter+2]);
+                j_iter+=2;
+                continue;
+              } 
+        }
+        std::cout<<"size:"<<path.size()<<" "<<tmp_path.size()<<"\n";
+        for(int j=0;j<(int)tmp_path.size()-1;j++)
+        {
+           Eigen::MatrixXd edge;
+           edge.resize(2,3);
+           edge.row(0)=tmp_path[j].transpose();
+           edge.row(1)=tmp_path[j+1].transpose();
            edges.push_back(edge);
         }
-        way_points_list.push_back(path);
+        way_points_list.push_back(tmp_path);
       }
       std::cout<<"ompl end\n";
+      
       int max_size=0;
       for(int i=0;i<uav_num;i++)
       {
@@ -128,14 +199,14 @@ void init_variable(const std::vector<std::vector<Eigen::Vector3d>>& way_points_l
 {
     
   
-  spline_list.resize(uav_num); 
+  spline_list.resize(uav_num);  //piece_time_list.resize(uav_num);
   p_slack_list.resize(uav_num); t_slack_list.resize(uav_num);
   p_lambda_list.resize(uav_num); t_lambda_list.resize(uav_num);
   
   piece_time=20;
   for(int i=0;i<uav_num;i++)
   {
-      
+      //piece_time_list[i]=piece_time;
 
       Data spline;
       spline.resize(trajectory_num,3);
@@ -404,9 +475,11 @@ int main(int argc, char *argv[])
   
   std::cout<<convert_list[0]<<std::endl;
 
-  std::vector<Data> spline_list; double piece_time;
+  std::vector<Data> spline_list; std::vector<double> piece_time_list;
   std::vector<Data> p_slack_list; std::vector<Eigen::VectorXd> t_slack_list;
   std::vector<Data> p_lambda_list; std::vector<Eigen::VectorXd> t_lambda_list;
+  
+  double piece_time;
   
   init_variable( way_points_list,
                  spline_list,  piece_time,
@@ -609,14 +682,17 @@ int main(int argc, char *argv[])
           std::cout<<"iter: "<<iter<<std::endl;
               
          
-            
+          
           Optimization3D_multi::optimization(spline_list, piece_time, 
                                               p_slack_list, t_slack_list, 
                                               p_lambda_list, t_lambda_list,
                                               vertex_list, bvh);
-            
-          
-                    
+           /* 
+          Optimization3D_multi::optimization_decouple(spline_list, piece_time_list, 
+                                                      p_slack_list, t_slack_list, 
+                                                      p_lambda_list, t_lambda_list,
+                                                      vertex_list, bvh);
+           */         
           clock_t time1 = clock();
           whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
           std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;

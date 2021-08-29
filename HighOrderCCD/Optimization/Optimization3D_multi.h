@@ -25,6 +25,93 @@ public:
   typedef Eigen::MatrixXd Data;
  
   typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
+  
+  static void optimization_decouple(std::vector<Data>& spline_list, std::vector<double>& piece_time_list,
+                                    std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list, 
+                                    std::vector<Data>& p_lambda_list, std::vector<Eigen::VectorXd>& t_lambda_list, 
+                                    const std::vector<Eigen::RowVector3d>& vertex_list,
+                                    BVH& bvh)
+  {
+   
+      clock_t time_0 = clock();
+      std::vector<std::vector<std::vector<Eigen::Vector3d>>> c_lists;  c_lists.resize(uav_num);
+      std::vector<std::vector<std::vector<double>>> d_lists;  d_lists.resize(uav_num);
+
+      for(int i=0;i<uav_num;i++)
+      {
+        std::vector<std::vector<Eigen::Vector3d>> c_list;
+        std::vector<std::vector<double>> d_list;
+
+        separate_plane(spline_list[i], vertex_list, c_list, d_list, bvh);
+
+        c_lists[i]=c_list;
+        d_lists[i]=d_list;
+      }
+
+      separate_self( spline_list, 
+                      c_lists, d_lists, bvh);
+      clock_t time0 = clock();
+      
+      std::vector<Data> direction_list; direction_list.resize(uav_num);
+      std::vector<double> t_direction_list; t_direction_list.resize(uav_num);
+      gnorm=0;
+      
+      for(int i=0;i<uav_num;i++)
+      {
+        Data direction;
+        double t_direction;
+                
+        spline_descent_direction( spline_list[i], direction,  piece_time_list[i],  t_direction,
+                                  p_slack_list[i],  t_slack_list[i],
+                                  p_lambda_list[i],  t_lambda_list[i],
+                                  c_lists[i], d_lists[i]);
+        
+        direction_list[i]=direction;
+        t_direction_list[i]=t_direction;
+      }
+      gnorm/=double(uav_num);
+
+      std::vector<double> step_list; 
+
+      Step::self_step(spline_list, direction_list,step_list, bvh);
+
+      for(int i=0;i<uav_num;i++)
+      {
+        double step=Step::position_step(spline_list[i], direction_list[i],vertex_list, bvh);  
+        //double step=Step::mix_step(spline_list[i], direction_list[i],V,F, bvh, c_lists[i], d_lists[i]);  
+        if(step<step_list[i])
+           step_list[i]=step;
+        spline_line_search( spline_list[i], direction_list[i],  piece_time_list[i], t_direction_list[i],
+                            p_slack_list[i], t_slack_list[i],
+                            p_lambda_list[i],  t_lambda_list[i],
+                            c_lists[i], d_lists[i],
+                            step_list[i]);
+      }
+      
+     
+      clock_t time1 = clock();   
+
+      //gn_file <<gnorm<<std::endl;
+      //step_file<<max_step<<std::endl;
+      for(int i=0;i<uav_num;i++)
+      {
+
+        update_slack_lambda(spline_list[i],  piece_time_list[i],
+                            p_slack_list[i], t_slack_list[i],
+                            p_lambda_list[i],  t_lambda_list[i]);
+      }
+      
+      //std::cout<<"piece_time:"<<piece_time<<std::endl;
+     
+      //energy_file <<Energy::fast_whole_energy( spline, V, F, bvh)<<std::endl;
+      
+      clock_t time2 = clock();
+      
+      std::cout<<std::endl<<"time10:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+      std::cout<<"time21:"<<(time2-time1)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+      std::cout<<"separate:"<<(time0-time_0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
+
+  }
 
   static void optimization(std::vector<Data>& spline_list, double& piece_time,
                            std::vector<Data>& p_slack_list, std::vector<Eigen::VectorXd>& t_slack_list, 
