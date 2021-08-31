@@ -28,6 +28,39 @@ Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now
     return ret;  
 }
 
+void way_point_init(const std::string& mesh_file, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
+{
+    std::string line;
+    std::ifstream myfile ("init/" +mesh_file + "_init_file.txt");
+    //V*=0.5;
+    Eigen::Vector3d p0;
+    std::vector<Eigen::Vector3d> read_points;
+    way_points_list.resize(uav_num);
+    if (myfile.is_open())
+    {
+      int i=0;
+      while ( getline (myfile,line) )
+      {
+        std::istringstream iss(line);
+        
+        for(int j=0;j<uav_num;j++)
+        {
+          iss>>p0(0)>>p0(1)>>p0(2);
+          //read_points.push_back(p0);
+          way_points_list[j].push_back(p0);
+        }
+        
+        
+        i++;
+      }
+      myfile.close();
+      //piece_num=i-1;
+    }
+
+    //way_points=read_points;
+    
+}
+
 bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges, 
                     const Eigen::MatrixXd& edge)
 {
@@ -105,7 +138,7 @@ void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::M
 
 }
 
-void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
+void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
 {
       Eigen::VectorXd minV=V.colwise().minCoeff().transpose();
       Eigen::VectorXd maxV=V.colwise().maxCoeff().transpose();
@@ -201,6 +234,16 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<std::vector<Eigen:
             
           std::cout<<way_points_list[i].size()<<" "<<max_size<<"\n";
         }
+      }
+
+      init_file.open ("init/" +mesh_file + "_init_file.txt");
+      for(int i=0;i<max_size;i++)
+      {
+        for(int j=0;j<uav_num;j++)
+        {
+          init_file<<way_points_list[j][i].transpose()<<" ";
+        }
+        init_file<<std::endl;
       }
       
 }
@@ -422,7 +465,16 @@ int main(int argc, char *argv[])
   
   
   std::vector<std::vector<Eigen::Vector3d>> way_points_list;
-  ompl_init(V,bvh, way_points_list);
+  
+  if(init_spline==1)
+  {
+    way_point_init( mesh_file, way_points_list);
+  }
+  else if(init_spline==2)
+  {
+    ompl_init( mesh_file, V, bvh, way_points_list);
+  }
+  
 
   piece_num=way_points_list[0].size()-1;
   time_weight.resize(piece_num); 

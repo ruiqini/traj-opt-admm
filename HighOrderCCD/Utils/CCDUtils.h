@@ -334,9 +334,9 @@ class Mesh
       #endif
 
       char line[IGL_LINE_MAX];
-      char currentmaterialref[MATERIAL_LINE_MAX] = "";
-      bool FMwasinit = false;
-      int line_no = 1, previous_face_no=0, current_face_no = 0;
+      //char currentmaterialref[MATERIAL_LINE_MAX] = "";
+      //bool FMwasinit = false;
+      //int line_no = 1, previous_face_no=0, current_face_no = 0;
 
       FILE * obj_file = fopen(mesh_file.c_str(),"r");
       
@@ -373,7 +373,7 @@ class Mesh
         {
           // ignore empty line
         }
-        line_no++;
+        //line_no++;
       }
 
       V.resize(vertex_num,3);
