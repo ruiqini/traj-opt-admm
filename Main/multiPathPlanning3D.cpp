@@ -1,6 +1,6 @@
-#include <igl/opengl/glfw/Viewer.h>
+//#include <igl/opengl/glfw/Viewer.h>
 
-#include <igl/read_triangle_mesh.h>
+//#include <igl/read_triangle_mesh.h>
 
 #include "HighOrderCCD/Utils/CCDUtils.h"
 
@@ -394,8 +394,8 @@ int main(int argc, char *argv[])
   Eigen::MatrixXi F, BF;
   
   const std::string mesh_file = argv[1];
-  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-
+  //igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
+  Mesh::readOBJ(mesh_file, V);
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
@@ -519,6 +519,7 @@ int main(int argc, char *argv[])
   }
   else
   {
+    /*
       igl::opengl::glfw::Viewer viewer;
  
       viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
@@ -540,16 +541,6 @@ int main(int argc, char *argv[])
       {
         switch(key)
         {
-          case 'R':
-          {
-            iter=0;
-            turns=0;
-            break;
-          }
-          case 'C':
-          {
-            break;
-          }
           case ' ':
           {
             //viewer.core().draw_buffer(viewer.data(),false,IR,IG,IB,IA);
@@ -579,15 +570,12 @@ int main(int argc, char *argv[])
       
       Eigen::MatrixXd C=V;
       
-      Eigen::RowVector3d C0(0.8,0.2,0.2);
-      Eigen::RowVector3d C1(0.2,0.8,0.2);
-      Eigen::RowVector3d C2(0.2,0.2,0.8);
-      Eigen::RowVector3d C3(0.2,0.8,0.8);
-      Eigen::RowVector3d C4(0.8,0.2,0.8);
-      Eigen::RowVector3d C5(0.8,0.8,0.2);
-      
-      
-     
+      Eigen::RowVector3d C0(1.0,0.1,0.1);
+      Eigen::RowVector3d C1(0.1,1.0,0.1);
+      Eigen::RowVector3d C2(0.1,0.1,1.0);
+      Eigen::RowVector3d C3(0.1,1.0,1.0);
+      Eigen::RowVector3d C4(1.0,0.1,1.0);
+      Eigen::RowVector3d C5(1.0,1.0,0.1);
 
       double x_up=V.col(0).maxCoeff();
       double x_down=V.col(0).minCoeff();
@@ -730,12 +718,7 @@ int main(int argc, char *argv[])
                                               p_slack_list, t_slack_list, 
                                               p_lambda_list, t_lambda_list,
                                               vertex_list, bvh);
-              /* 
-              Optimization3D_multi::optimization_decouple(spline_list, piece_time_list, 
-                                                          p_slack_list, t_slack_list, 
-                                                          p_lambda_list, t_lambda_list,
-                                                          vertex_list, bvh);
-              */         
+                    
         
               clock_t time1 = clock();
               whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
@@ -752,7 +735,7 @@ int main(int argc, char *argv[])
       viewer.callback_key_down = key_down;
     
       viewer.launch();
-
+     */
   }
 
   return 0;

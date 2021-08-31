@@ -1,8 +1,8 @@
 
-#include <igl/opengl/glfw/Viewer.h>
+//#include <igl/opengl/glfw/Viewer.h>
 
-#include <igl/read_triangle_mesh.h>
-#include <igl/write_triangle_mesh.h>
+//#include <igl/read_triangle_mesh.h>
+//#include <igl/write_triangle_mesh.h>
 
 #include "HighOrderCCD/Utils/CCDUtils.h"
 #include "HighOrderCCD/OMPL/OMPL.h"
@@ -91,7 +91,7 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
                   f_ccd(i,0)=i; f_ccd(i,1)=i+1; f_ccd(i,2)=i+ccd_traj.size();
               }
 
-              igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
+              //igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
 }
 
 void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& way_points)
@@ -425,8 +425,8 @@ int main(int argc, char *argv[])
   Eigen::MatrixXd V;
   Eigen::MatrixXi F;
   
-  igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-
+  //igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
+  Mesh::readOBJ(mesh_file, V);
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
@@ -545,6 +545,7 @@ int main(int argc, char *argv[])
   }
   else
   {
+    /*
       igl::opengl::glfw::Viewer viewer;
  
       viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
@@ -566,16 +567,6 @@ int main(int argc, char *argv[])
       {
         switch(key)
         {
-          case 'R':
-          {
-            iter=0;
-            turns=0;
-            break;
-          }
-          case 'C':
-          {
-            break;
-          }
           case ' ':
           {
             //viewer.core().draw_buffer(viewer.data(),false,IR,IG,IB,IA);
@@ -605,13 +596,12 @@ int main(int argc, char *argv[])
       
       Eigen::MatrixXd C=V;
       
-      Eigen::RowVector3d C0(0.8,0.2,0.2);
-      Eigen::RowVector3d C1(0.2,0.8,0.2);
-      Eigen::RowVector3d C2(0.2,0.2,0.8);
-      Eigen::RowVector3d C3(0.2,0.8,0.8);
-      Eigen::RowVector3d C4(0.8,0.2,0.8);
-      Eigen::RowVector3d C5(0.8,0.8,0.2);
-      
+      Eigen::RowVector3d C0(1.0,0.1,0.1);
+      Eigen::RowVector3d C1(0.1,1.0,0.1);
+      Eigen::RowVector3d C2(0.1,0.1,1.0);
+      Eigen::RowVector3d C3(0.1,1.0,1.0);
+      Eigen::RowVector3d C4(1.0,0.1,1.0);
+      Eigen::RowVector3d C5(1.0,1.0,0.1);
      
 
       double x_up=V.col(0).maxCoeff();
@@ -757,7 +747,7 @@ int main(int argc, char *argv[])
       viewer.callback_key_down = key_down;
     
       viewer.launch();
-
+      */
   }
   
   return 0;
