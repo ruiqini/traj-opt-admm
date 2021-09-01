@@ -413,6 +413,8 @@ int main(int argc, char *argv[])
   //lambda=1.0/margin2;
 
   int gui=j["gui"].get<int>();
+
+  int decouple=j["decouple"].get<int>();
     
   vel_limit=j["vel_limit"].get<double>();
   acc_limit=j["acc_limit"].get<double>();
@@ -515,7 +517,15 @@ int main(int argc, char *argv[])
                  spline_list,  piece_time,
                  p_slack_list,  t_slack_list,
                  p_lambda_list, t_lambda_list);
-
+  if(decouple)
+  {
+    piece_time_list.resize(uav_num);
+    for(int i=0;i<uav_num;i++)
+    {
+        piece_time_list[i]=piece_time;
+    }
+  }
+  
   //std::cout<<F_<<std::endl;
   double whole_time=0;
   
@@ -528,11 +538,14 @@ int main(int argc, char *argv[])
       if(iter>1 && gnorm<stop)
       {
         
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            result_file<<piece_time<<std::endl;
+            result_file<<"iter: "<<iter<<std::endl;
+            result_file<<"running time: "<<whole_time<<std::endl;
+            //result_file<<gnorm<<std::endl;
+            result_file<<"point cloud size: "<<V.rows()<<std::endl;
+            //result_file<<"spline\n"<<spline<<std::endl;
+            //result_file<<piece_time<<std::endl;
+
+            //log_data(mesh_file, spline, piece_time);
 
             if(if_exit)
               exit(0);
@@ -548,11 +561,22 @@ int main(int argc, char *argv[])
         clock_t time0 = clock();
         std::cout<<"iter: "<<iter<<std::endl;
             
-        
-        Optimization3D_multi::optimization(spline_list, piece_time, 
+        if(decouple)
+        {
+          Optimization3D_multi::optimization_decouple(spline_list, piece_time_list, 
+                                                      p_slack_list, t_slack_list, 
+                                                      p_lambda_list, t_lambda_list,
+                                                      vertex_list, bvh);
+
+        }
+        else
+        {
+          Optimization3D_multi::optimization(spline_list, piece_time, 
                                               p_slack_list, t_slack_list, 
                                               p_lambda_list, t_lambda_list,
                                               vertex_list, bvh);
+        }
+         
            /* 
           Optimization3D_multi::optimization_decouple(spline_list, piece_time_list, 
                                                       p_slack_list, t_slack_list, 

@@ -509,12 +509,14 @@ int main(int argc, char *argv[])
       if(iter>1 && gnorm<stop)
       {
         
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            result_file<<spline<<std::endl;
-            result_file<<piece_time<<std::endl;
+            result_file<<"iter: "<<iter<<std::endl;
+            result_file<<"running time: "<<whole_time<<std::endl;
+            //result_file<<gnorm<<std::endl;
+            result_file<<"point cloud size: "<<V.rows()<<std::endl;
+            result_file<<"spline\n"<<spline<<std::endl;
+            //result_file<<piece_time<<std::endl;
+
+            log_data(mesh_file, spline, piece_time);
 
             if(if_exit)
               exit(0);

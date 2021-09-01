@@ -1,8 +1,9 @@
 {
  "auto": 0,
- "step_choose": 1,
  "init": 1,
- "optimal_plane": 1,
+ "gui":0,
+ "optimal_plane": 0,
+ "decouple": 1,
  "res": 8,
  "vel_limit": 2,
  "acc_limit": 2,
@@ -13,6 +14,5 @@
  "stop": 1e-2,
  "exit": 0,
  "init_ob": 1,
- "scale": 1,
  "mu": 0.1
 }

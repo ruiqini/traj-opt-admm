@@ -101,6 +101,10 @@ public:
                             p_lambda_list[i],  t_lambda_list[i]);
       }
       
+      for(int i=0;i<uav_num;i++)
+      {
+        std::cout<<"piece_time:"<<piece_time_list[i]<<std::endl;
+      }
       //std::cout<<"piece_time:"<<piece_time<<std::endl;
      
       //energy_file <<Energy::fast_whole_energy( spline, V, F, bvh)<<std::endl;
@@ -138,43 +142,7 @@ public:
       separate_self( spline_list, 
                       c_lists, d_lists, bvh);
       clock_t time0 = clock();
-      /*
-      std::vector<Data> direction_list; direction_list.resize(uav_num);
-      std::vector<double> t_direction_list; t_direction_list.resize(uav_num);
-      gnorm=0;
       
-      for(int i=0;i<uav_num;i++)
-      {
-        Data direction;
-        double t_direction;
-                
-        spline_descent_direction( spline_list[i], direction,  piece_time_list[i],  t_direction,
-                                  p_slack_list[i],  t_slack_list[i],
-                                  p_lambda_list[i],  t_lambda_list[i],
-                                  c_lists[i], d_lists[i]);
-        
-        direction_list[i]=direction;
-        t_direction_list[i]=t_direction;
-      }
-      gnorm/=double(uav_num);
-
-      std::vector<double> step_list; 
-
-      Step::self_step(spline_list, direction_list,step_list, bvh);
-
-      for(int i=0;i<uav_num;i++)
-      {
-        double step=Step::position_step(spline_list[i], direction_list[i],vertex_list, bvh);  
-        //double step=Step::mix_step(spline_list[i], direction_list[i],V,F, bvh, c_lists[i], d_lists[i]);  
-        if(step<step_list[i])
-           step_list[i]=step;
-        spline_line_search( spline_list[i], direction_list[i],  piece_time_list[i], t_direction_list[i],
-                            p_slack_list[i], t_slack_list[i],
-                            p_lambda_list[i],  t_lambda_list[i],
-                            c_lists[i], d_lists[i],
-                            step_list[i]);
-      }
-      */
       update_spline( spline_list,  piece_time,
                       p_slack_list, t_slack_list, 
                       p_lambda_list,  t_lambda_list, 

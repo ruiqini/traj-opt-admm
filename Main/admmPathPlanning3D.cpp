@@ -46,6 +46,7 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
                 coeff.block<1,order_num+1>(i,order_num+1)=bz.col(1).transpose();
                 coeff.block<1,order_num+1>(i,2*(order_num+1))=bz.col(2).transpose();
               }
+              /*
               std::ofstream file(meshfile+"_ccd_test.txt");
               if (file.is_open())
               {
@@ -53,7 +54,7 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
                 file << "time:" << '\n' <<  my_time << '\n';
               }
               file.close();
-
+              */
               std::vector<Eigen::Vector3d> ccd_traj;
               
              for (double t = 0.0; t < piece_num; t += 0.05 / piece_time){
@@ -74,6 +75,12 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
               }
               std::cout<<"ccd len:"<<len_ccd<<std::endl;
               
+              std::ofstream curve_file;
+              curve_file.open (meshfile + "_curve_file.txt");
+              for(int i=0;i<ccd_traj.size();i++)
+              {
+                curve_file<<ccd_traj[i].transpose()<<"\n";
+              }
 
               Eigen::MatrixXd v_ccd(2*ccd_traj.size()-1,3);
               Eigen::MatrixXi f_ccd(ccd_traj.size()-1,3);
@@ -89,6 +96,8 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
               {
                   f_ccd(i,0)=i; f_ccd(i,1)=i+1; f_ccd(i,2)=i+ccd_traj.size();
               }
+              
+              
 
               //igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
 }
@@ -426,7 +435,7 @@ int main(int argc, char *argv[])
   
   //igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
   Mesh::readOBJ(mesh_file, V);
-  
+
   std::cout<<"before bvh init\n";
   BVH bvh;
   clock_t time1 = clock();
@@ -507,12 +516,14 @@ int main(int argc, char *argv[])
       if(iter>1 && gnorm<stop)
       {
         
-            result_file<<iter<<std::endl;
-            result_file<<whole_time<<std::endl;
-            result_file<<gnorm<<std::endl;
-            result_file<<V.rows()<<" "<<F.rows()<<std::endl;
-            result_file<<spline<<std::endl;
-            result_file<<piece_time<<std::endl;
+            result_file<<"iter: "<<iter<<std::endl;
+            result_file<<"running time: "<<whole_time<<std::endl;
+            //result_file<<gnorm<<std::endl;
+            result_file<<"point cloud size: "<<V.rows()<<std::endl;
+            result_file<<"spline\n"<<spline<<std::endl;
+            //result_file<<piece_time<<std::endl;
+
+            log_data(mesh_file, spline, piece_time);
 
             if(if_exit)
               exit(0);

@@ -233,7 +233,7 @@ public:
                                    Data& p_lambda,  Eigen::VectorXd& t_lambda)
   {
 
-
+    double error=0;
     for(int sp_id=0;sp_id<piece_num;sp_id++)
     {
         int init=sp_id*(order_num-2);
@@ -389,8 +389,12 @@ public:
         p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0)+=mu*(c_spline-p_part);
 
         t_lambda(sp_id)+=mu*(piece_time-t_part);
+
+        error+=(c_spline-p_part).squaredNorm()+(piece_time-t_part)*(piece_time-t_part);
         
     }
+
+    std::cout<<"sqrt error: "<<sqrt(error)<<"\n";
   }
 
   static int spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,
