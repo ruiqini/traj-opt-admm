@@ -1,4 +1,4 @@
-//#include <igl/opengl/glfw/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 
 //#include <igl/read_triangle_mesh.h>
 
@@ -61,7 +61,7 @@ void way_point_init(const std::string& mesh_file, std::vector<std::vector<Eigen:
     
 }
 
-bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges, 
+bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<std::vector<Eigen::MatrixXd>>& edges, 
                     const Eigen::MatrixXd& edge)
 {
            std::vector<unsigned int> collision_pair;
@@ -87,16 +87,19 @@ bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::
 
           for(int i=0;i<(int)edges.size();i++)
           {
-            is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
-            if(is_collided)
+            for(int j=0;j<(int)edges[i].size();j++)
             {
-              return true;
+              is_collided= CCD::GJKDCD(edge,edges[i][j], offset+0.5*margin);  //cgal
+              if(is_collided)
+              {
+                  return true;
+              }
             }
           }
           return false;
 }
 
-void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges,
+void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<std::vector<Eigen::MatrixXd>>& edges,
                    const std::vector<Eigen::Vector3d> & path, std::vector<Eigen::Vector3d>& tmp_path)
 {
      std::vector<int> id_vec; id_vec.resize(path.size());
@@ -145,9 +148,10 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
       std::cout<<minV<<"\n";
       std::cout<<maxV<<"\n";
       Eigen::VectorXd lowerBound, upperBound;
-      lowerBound=1.5*minV;
-      upperBound=1.5*maxV;
-      
+      //lowerBound=1.5*minV;
+      //upperBound=1.5*maxV;
+      lowerBound=Eigen::Vector3d(-10,-10,-10);
+      upperBound=Eigen::Vector3d(10,10,10);
       
       std::vector<Eigen::Vector3d> path;
       std::vector<Eigen::Vector3d> tmp_path;
@@ -165,7 +169,25 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
       std::vector<Eigen::Vector3d> _start,_end;
       _start.resize(uav_num);
       _end.resize(uav_num); 
-      
+      for(int i=0;i<6;i++)
+      {
+        _start[i](0)=-6;
+        _start[i](1)=-2.5+i;
+        _start[i](2)=0.5;
+       
+        _end[i](0)=6;
+        _end[i](1)=2.5-i;
+        _end[i](2)=0.5;
+
+        _start[i+6](0)=6;
+        _start[i+6](1)=2.5-i;
+        _start[i+6](2)=0.5;
+        
+        _end[i+6](0)=-6;
+        _end[i+6](1)=-2.5+i;
+        _end[i+6](2)=0.5;
+      }
+      /*
       _start[0]<<2.7,0,0.5;
       _end[0]<<-2.7,0,0.5;
        ////_start[0]<<0.3,0.5,0.5;
@@ -183,11 +205,14 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
       //end<<-2.7,0,-0.5;
        _start[3]<<-2.5,0,-0.5;
        _end[3]<<2.5,0,0.5;
-      std::vector<Eigen::MatrixXd> edges;
+       */
+      std::vector<std::vector<Eigen::MatrixXd>> edges;
       edges.clear();
+      //edges.resize(uav_num);
       way_points_list.clear();
       for(int i=0;i<uav_num;i++)
       {
+        std::cout<<"uav:"<<i<<"-------------------\n";
         OMPL ompl(lowerBound, upperBound,
                   V,edges,bvh);
         start=_start[i];
@@ -196,19 +221,24 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
         {
           ompl.getPath(path);
         }
-        
+        if(i==0)
+          std::cout<<path[0]<<std::endl;
         simplify_path( V, bvh,  edges,
-                      path,  tmp_path);
+                      path,  tmp_path); 
+        if(i==0)
+          std::cout<<tmp_path[0]<<std::endl; 
         std::cout<<"size:"<<path.size()<<" "<<tmp_path.size()<<"\n";
-        
+        std::vector<Eigen::MatrixXd> _edges;
         for(int j=0;j<(int)tmp_path.size()-1;j++)
         {
            Eigen::MatrixXd edge;
            edge.resize(2,3);
            edge.row(0)=tmp_path[j].transpose();
            edge.row(1)=tmp_path[j+1].transpose();
-           edges.push_back(edge);
+           _edges.push_back(edge);
         }
+        edges.push_back(_edges);
+        std::cout<<tmp_path[0].transpose()<<"\n";
         way_points_list.push_back(tmp_path);
       }
       std::cout<<"ompl end\n";
@@ -226,10 +256,11 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
         {
           int size=way_points_list[i].size();
           int len=max_size-size;
-          for(int j=0;j<len;j++)
+          for(int j=1;j<=len;j++)
           {
-            Eigen::Vector3d pos=0.5*(way_points_list[i][size-1-j-1] + way_points_list[i][size-1-j]);
-            way_points_list[i].insert( way_points_list[i].begin() + size-1-j , pos );
+            Eigen::Vector3d pos=j/double(len+1)*way_points_list[i][size-1-1] + 
+                             (len+1-j)/double(len+1)* way_points_list[i][size-1];
+            way_points_list[i].insert( way_points_list[i].begin() + size-1 , pos );
           }
             
           std::cout<<way_points_list[i].size()<<" "<<max_size<<"\n";
@@ -463,8 +494,8 @@ int main(int argc, char *argv[])
   result_file.open ("result/" +mesh_file + "_result_file_multi.txt");
   
   
-  uav_num=4;//2
-  
+  //uav_num=4;//2
+  uav_num=12;
   
   std::vector<std::vector<Eigen::Vector3d>> way_points_list;
   
@@ -595,7 +626,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    /*
+    
       igl::opengl::glfw::Viewer viewer;
  
       viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
@@ -678,13 +709,24 @@ int main(int argc, char *argv[])
       viewer.data().set_points(V,C);
 
       for(int i=0;i<uav_num;i++)
+      {
         viewer.data().add_points(spline_list[i].row(0),C0);
+        std::cout<<spline_list[i].row(0)<<"\n";
 
+      }
+      
+      double tree_size=(subdivide_tree.size()-1)/2.0;
       for(unsigned int k=0;k<subdivide_tree.size();k++)
       {
         int sp_id=std::get<0>(subdivide_tree[k]);
         Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
         Eigen::MatrixXd bz;
+        Eigen::RowVector3d CC;
+        if(k<tree_size)
+           CC=(tree_size-k)/tree_size*C0+k/tree_size*C5;
+        else
+           CC=(tree_size-(k-tree_size))/tree_size*C3+(k-tree_size)/tree_size*C2;
+
         for(int i=0;i<uav_num;i++)
         {
           bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
@@ -702,14 +744,14 @@ int main(int argc, char *argv[])
           {
             for(int j=0;j<=order_num;j++)
             {
-              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.2,0.8,0.8));
             }
           }
           else
           {
             for(int j=0;j<=order_num;j++)
             {
-              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+              viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.8,0.2,0.8));
             }
           }
 
@@ -732,6 +774,12 @@ int main(int argc, char *argv[])
                 int sp_id=std::get<0>(subdivide_tree[k]);
                 Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
                 Eigen::MatrixXd bz;
+
+                Eigen::RowVector3d CC;
+                if(k<tree_size)
+                  CC=(tree_size-k)/tree_size*C0+k/tree_size*C5;
+                else
+                  CC=(tree_size-(k-tree_size))/tree_size*C3+(k-tree_size)/tree_size*C2;
                 for(int i=0;i<uav_num;i++)
                 {
                   bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
@@ -749,14 +797,14 @@ int main(int argc, char *argv[])
                   {
                     for(int j=0;j<=order_num;j++)
                     {
-                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.2,0.8,0.8));
                     }
                   }
                   else
                   {
                     for(int j=0;j<=order_num;j++)
                     {
-                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+                      viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);// Eigen::RowVector3d(0.8,0.2,0.8));
                     }
                   }
 
@@ -811,7 +859,7 @@ int main(int argc, char *argv[])
       viewer.callback_key_down = key_down;
     
       viewer.launch();
-     */
+     
   }
 
   return 0;

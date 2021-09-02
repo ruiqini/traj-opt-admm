@@ -15,7 +15,7 @@ class myMotionValidator : public ob::MotionValidator
 public:
    
     myMotionValidator(ob::SpaceInformation* si, 
-                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
@@ -24,7 +24,7 @@ public:
     }
  
     myMotionValidator(const ob::SpaceInformationPtr &si, 
-                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
@@ -81,10 +81,13 @@ public:
 
       for(int i=0;i<(int)edges.size();i++)
       {
-        bool is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
-        if(is_collided)
+        for(int j=1;j<(int)edges[i].size()-1;j++)
         {
-            return !valid;
+          bool is_collided= CCD::GJKDCD(edge,edges[i][j], offset+0.5*margin);  //cgal
+          if(is_collided)
+          {
+              return !valid;
+          }
         }
       }
       
@@ -105,13 +108,13 @@ public:
     }
     
     Eigen::MatrixXd V;
-    std::vector<Eigen::MatrixXd> edges;
+    std::vector<std::vector<Eigen::MatrixXd>> edges;
     BVH* bvh;
     
 };
 //OMPL
 OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, 
-          Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
+          Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
            BVH& _bvh)
 {
   int dim=lowerBound.size();
@@ -165,7 +168,7 @@ void OMPL::getPath(std::vector<Eigen::Vector3d> &path) //const const
 }
 
 bool OMPL::planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal, 
-                      Eigen::MatrixXd _V, std::vector<Eigen::MatrixXd> _edges,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                       BVH& _bvh, int time)//,std::function<bool(const Mesh&)> fn
 {
   ob::ProblemDefinitionPtr prob(new ob::ProblemDefinition(_stateInfo));

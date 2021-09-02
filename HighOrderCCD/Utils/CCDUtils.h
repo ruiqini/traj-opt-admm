@@ -350,7 +350,7 @@ class Mesh
         if(sscanf(line, "%s",type) == 1)
         {
           // Get pointer to rest of line right after type
-          char * l = &line[strlen(type)];
+          //char * l = &line[strlen(type)];
           if(type == v)
           {
             std::istringstream ls(&line[1]);

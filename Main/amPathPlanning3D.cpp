@@ -124,7 +124,7 @@ void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& 
 
 }
 
-bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges, 
+bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<std::vector<Eigen::MatrixXd>>& edges, 
                     const Eigen::MatrixXd& edge)
 {
            std::vector<unsigned int> collision_pair;
@@ -150,16 +150,19 @@ bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::
 
           for(int i=0;i<(int)edges.size();i++)
           {
-            is_collided= CCD::GJKDCD(edge,edges[i], offset+0.5*margin);  //cgal
-            if(is_collided)
+            for(int j=0;j<(int)edges[i].size();j++)
             {
-              return true;
+              is_collided= CCD::GJKDCD(edge,edges[i][j], offset+0.5*margin);  //cgal
+              if(is_collided)
+              {
+                  return true;
+              }
             }
           }
           return false;
 }
 
-void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<Eigen::MatrixXd>& edges,
+void simplify_path(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<std::vector<Eigen::MatrixXd>>& edges,
                    const std::vector<Eigen::Vector3d> & path, std::vector<Eigen::Vector3d>& tmp_path)
 {
      std::vector<int> id_vec; id_vec.resize(path.size());
@@ -234,7 +237,7 @@ void ompl_init(const Eigen::MatrixXd& V,BVH& bvh, std::vector<Eigen::Vector3d>& 
       end(1)= 0;
       end(2)= 0;
       
-      std::vector<Eigen::MatrixXd> edges;
+      std::vector<std::vector<Eigen::MatrixXd>> edges;
       edges.clear();
       OMPL ompl(lowerBound, upperBound,
                 V,edges, bvh);

@@ -74,6 +74,7 @@
         "openglsupport": "cpp",
         "specialfunctions": "cpp",
         "splines": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "codecvt": "cpp"
     }
 }

@@ -63,7 +63,7 @@ MACRO(ADD_EXE NAME)
   ELSE(MSVC)
       TARGET_LINK_LIBRARIES(${NAME} admmCCD gomp ${ALL_STATIC_LIBRARIES})
   ENDIF(MSVC)
-  TARGET_LINK_LIBRARIES(${NAME} openGJKlib )#igl::core igl::opengl_glfw
+  TARGET_LINK_LIBRARIES(${NAME} openGJKlib igl::core igl::opengl_glfw)#igl::core igl::opengl_glfw
 ENDMACRO(ADD_EXE)
 
 #TEST
@@ -74,7 +74,7 @@ MACRO(ADD_TEST NAME)
   ELSE(MSVC)
       TARGET_LINK_LIBRARIES(${NAME} admmCCD gomp ${ALL_STATIC_LIBRARIES})
   ENDIF(MSVC)
-  TARGET_LINK_LIBRARIES(${NAME} openGJKlib )#igl::core igl::opengl_glfw
+  TARGET_LINK_LIBRARIES(${NAME} openGJKlib igl::core igl::opengl_glfw)#igl::core igl::opengl_glfw
 ENDMACRO(ADD_TEST)
 
 

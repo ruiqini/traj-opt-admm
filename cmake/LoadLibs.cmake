@@ -17,11 +17,11 @@ ELSE()
 ENDIF()
 
 #LIBIGL
-#option(LIBIGL_WITH_OPENGL            "Use OpenGL"         ON)
-#option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"           ON)
+option(LIBIGL_WITH_OPENGL            "Use OpenGL"         ON)
+option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"           ON)
 
 
-#find_package(LIBIGL REQUIRED QUIET)
+find_package(LIBIGL REQUIRED QUIET)
 
 #OMPL
 find_package(ompl)
