@@ -75,6 +75,7 @@
         "specialfunctions": "cpp",
         "splines": "cpp",
         "csignal": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "*.expression": "cpp"
     }
 }
