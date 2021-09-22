@@ -300,6 +300,8 @@ public:
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
 
+    energy_file<<spline_energy(spline, piece_time,c_lists, d_lists);
+
   }
 
   static double spline_energy(  const Data& spline, const double& piece_time,
@@ -471,7 +473,7 @@ public:
         hessian.block(0,0,num,num) += ks/std::pow(piece_time,2*der_num-1)*B;
 
         grad(num)+=-(2*der_num-1)*dynamic_energy/piece_time;
-        //g_t+=kt;
+        //grad(num)+=kt;
         grad(num)+=kt*1.1*std::pow(piece_time,0.1);
 
         hessian(num,num)+=(2*der_num-1)*(2*der_num)*dynamic_energy/(piece_time*piece_time);  

@@ -1,5 +1,5 @@
 
-//#include <igl/opengl/glfw/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 
 //#include <igl/read_triangle_mesh.h>
 //#include <igl/write_triangle_mesh.h>
@@ -502,7 +502,12 @@ int main(int argc, char *argv[])
                 piece_time,t_slack,t_lambda);
   
   double whole_time=0;
-  
+
+  energy_file.open (mesh_file + "_energy_file_am.txt");
+
+  energy_file<<0;
+  energy_file<<" "<<whole_time<<"\n";
+
   if(!gui)
   {
     automove=true;
@@ -541,6 +546,9 @@ int main(int argc, char *argv[])
     
         clock_t time1 = clock();
         whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
+
+        energy_file<<" "<<whole_time<<"\n";
+
         std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
         //std::cout<<p0.size()<<std::endl;
         iter++;
@@ -550,7 +558,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    /*
+    
       igl::opengl::glfw::Viewer viewer;
  
       viewer.core().background_color<< 1.0f, 1.0f, 1.0f, 1.0f;
@@ -597,7 +605,7 @@ int main(int argc, char *argv[])
       };
       
       viewer.data().line_width = 5.0f;
-      viewer.data().point_size = 5.0f;
+      viewer.data().point_size = 2.5f;
       
       Eigen::MatrixXd C=V;
       
@@ -607,6 +615,7 @@ int main(int argc, char *argv[])
       Eigen::RowVector3d C3(0.1,1.0,1.0);
       Eigen::RowVector3d C4(1.0,0.1,1.0);
       Eigen::RowVector3d C5(1.0,1.0,0.1);
+      
      
 
       double x_up=V.col(0).maxCoeff();
@@ -633,13 +642,22 @@ int main(int argc, char *argv[])
       }
       viewer.data().set_points(V,C);
 
+      double tree_size=(subdivide_tree.size()-1)/5.0;
       for(unsigned int k=0;k<subdivide_tree.size();k++)
       {
         int sp_id=std::get<0>(subdivide_tree[k]);
         Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
         Eigen::MatrixXd bz;
-        bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
+        Eigen::RowVector3d CC;
+        if(k<2*tree_size)
+          CC=(2*tree_size-k)/(2*tree_size)*C0+k/(2*tree_size)*C5;
+        else if(k>3*tree_size)
+          CC=(2*tree_size-(k-3*tree_size))/(2*tree_size)*C3+(k-3*tree_size)/(2*tree_size)*C2;
+        else
+          CC=(tree_size-(k-2*tree_size))/tree_size*C5+(k-2*tree_size)/tree_size*C3;
         
+        bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
+      
         std::vector<Eigen::RowVector3d> P(order_num+1);
         for(int j=0;j<=order_num;j++)
         {
@@ -653,18 +671,20 @@ int main(int argc, char *argv[])
         {
           for(int j=0;j<=order_num;j++)
           {
-            viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+            viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.2,0.8,0.8));
           }
         }
         else
         {
           for(int j=0;j<=order_num;j++)
           {
-            viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+            viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.8,0.2,0.8));
           }
         }
+
+        
+        
       }
-     
       const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
       {  
         if(iter<num) 
@@ -681,6 +701,14 @@ int main(int argc, char *argv[])
                 Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
                 Eigen::MatrixXd bz;
                 bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
+
+                Eigen::RowVector3d CC;
+                if(k<2*tree_size)
+                  CC=(2*tree_size-k)/(2*tree_size)*C0+k/(2*tree_size)*C5;
+                else if(k>3*tree_size)
+                  CC=(2*tree_size-(k-3*tree_size))/(2*tree_size)*C3+(k-3*tree_size)/(2*tree_size)*C2;
+                else
+                  CC=(tree_size-(k-2*tree_size))/tree_size*C5+(k-2*tree_size)/tree_size*C3;
                 
                 std::vector<Eigen::RowVector3d> P(order_num+1);
                 for(int j=0;j<=order_num;j++)
@@ -695,14 +723,14 @@ int main(int argc, char *argv[])
                 {
                   for(int j=0;j<=order_num;j++)
                   {
-                    viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.2,0.8,0.8));
+                    viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.2,0.8,0.8));
                   }
                 }
                 else
                 {
                   for(int j=0;j<=order_num;j++)
                   {
-                    viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], Eigen::RowVector3d(0.8,0.2,0.8));
+                    viewer.data().add_edges(P[j], P[(j+1)%(order_num+1)], CC);//Eigen::RowVector3d(0.8,0.2,0.8));
                   }
                 }
               }
@@ -735,7 +763,7 @@ int main(int argc, char *argv[])
                   
               
               Optimization3D_am::optimization(spline, piece_time, 
-                                              vertex_list, bvh);
+                                          vertex_list, bvh);
         
               clock_t time1 = clock();
               whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
@@ -752,7 +780,7 @@ int main(int argc, char *argv[])
       viewer.callback_key_down = key_down;
     
       viewer.launch();
-      */
+      
   }
   
   return 0;

@@ -50,6 +50,7 @@ extern std::vector< std::tuple< int, std::pair<double,double>,
 extern std::vector<std::vector< Eigen::MatrixXd>  > A_list, A_vel_list, A_acc_list;
 /*change to vector<vector<pair<>,matrix>>>*/
 extern bool automove;
+extern std::ofstream energy_file;
 extern std::ofstream  result_file,  init_file;
 
 extern Eigen::MatrixXd M_dynamic;

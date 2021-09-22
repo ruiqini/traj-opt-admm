@@ -28,6 +28,78 @@ Eigen::Vector3d getPosFromBezier(const Eigen::MatrixXd & polyCoeff, double t_now
     return ret;  
 }
 
+void log_data(int traj_id, double& whole_len, std::string meshfile, Eigen::MatrixXd spline, double piece_time)
+{
+              Eigen::VectorXd my_time(piece_num);
+              Eigen::MatrixXd coeff(piece_num, 3*(order_num+1));
+              for(int i=0;i<piece_num;i++)
+              {
+                my_time(i)=time_weight[i]*piece_time;
+                Eigen::MatrixXd bz;
+                bz=spline.block<order_num+1,3>(i*(order_num-2),0);
+                
+                bz=convert_list[i]*bz;
+                coeff.block<1,order_num+1>(i,0)=bz.col(0).transpose();
+                coeff.block<1,order_num+1>(i,order_num+1)=bz.col(1).transpose();
+                coeff.block<1,order_num+1>(i,2*(order_num+1))=bz.col(2).transpose();
+              }
+              /*
+              std::ofstream file(meshfile+"_ccd_test.txt");
+              if (file.is_open())
+              {
+                file << "coeff:\n" << coeff << '\n';
+                file << "time:" << '\n' <<  my_time << '\n';
+              }
+              file.close();
+              */
+              std::vector<Eigen::Vector3d> ccd_traj;
+              
+             for (double t = 0.0; t < piece_num; t += 0.05 / piece_time){
+                      int i = floor(t);
+                      double cur_t=t-i;
+                      Eigen::Vector3d state = getPosFromBezier( coeff, cur_t, i ,order_num);
+                      Eigen::Vector3d cur;
+                      cur(0) =   state(0);
+                      cur(1) =   state(1);
+                      cur(2) =   state(2);
+                      ccd_traj.push_back(cur);
+                  }
+              std::cout<<"ccd time:"<<my_time.sum()<<std::endl;
+              double  len_ccd=0;
+              for(int i=0;i<(int)ccd_traj.size()-1;i++)
+              {
+                  len_ccd+=(ccd_traj[i+1]-ccd_traj[i]).norm();;
+              }
+              std::cout<<"ccd len:"<<len_ccd<<std::endl;
+              whole_len+=len_ccd;
+
+              std::ofstream curve_file;
+              curve_file.open ("multi/"+meshfile + "_curve_file"+std::to_string(traj_id)+".txt");
+              for(int i=0;i<ccd_traj.size();i++)
+              {
+                curve_file<<ccd_traj[i].transpose()<<"\n";
+              }
+
+              Eigen::MatrixXd v_ccd(2*ccd_traj.size()-1,3);
+              Eigen::MatrixXi f_ccd(ccd_traj.size()-1,3);
+              for(int i=0;i<(int)ccd_traj.size();i++)
+              {
+                  v_ccd.row(i)=ccd_traj[i].transpose();
+              }
+              for(int i=0;i<(int)ccd_traj.size()-1;i++)
+              {
+                  v_ccd.row(i+ccd_traj.size())=0.5*(ccd_traj[i].transpose()+ccd_traj[i+1].transpose());
+              }
+              for(int i=0;i<(int)ccd_traj.size()-1;i++)
+              {
+                  f_ccd(i,0)=i; f_ccd(i,1)=i+1; f_ccd(i,2)=i+ccd_traj.size();
+              }
+              
+              
+
+              //igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
+}
+
 void way_point_init(const std::string& mesh_file, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
 {
     std::string line;
@@ -200,23 +272,23 @@ void ompl_init(const std::string& mesh_file, const Eigen::MatrixXd& V, BVH& bvh,
         _end[i+6](2)=0.5;
       }
       */
-      _start[0]<<2.7,0,0.5;
-      _end[0]<<-2.7,0,0.5;
+      _start[0]<<2.5,1.7,0.5;
+      _end[0]<<-2.5,1.7,0.5;
        ////_start[0]<<0.3,0.5,0.5;
        ////_end[0]<<-0.3,-0.5,-0.5;
 
-      _start[1]<<2.7,0,-0.5;
-      _end[1]<<-2.7,0,-0.5;
+      _start[1]<<2.5,1.7,-0.5;
+      _end[1]<<-2.5,1.7,-0.5;
        ////_start[1]<<0.3,-0.5,0.5;
        ////_end[1]<<-0.3,0.5,-0.5;
 
-       _start[2]<<-2.5,0,0.5;
-       _end[2]<<2.5,0,-0.5;
+       _start[2]<<-2.5,1.7,0.5;
+       _end[2]<<2.5,1.7,-0.5;
 
       //start<<2.7,0,-0.5;
       //end<<-2.7,0,-0.5;
-       _start[3]<<-2.5,0,-0.5;
-       _end[3]<<2.5,0,0.5;
+       _start[3]<<-2.5,1.7,-0.5;
+       _end[3]<<2.5,1.7,0.5;
        
       std::vector<std::vector<Eigen::MatrixXd>> edges;
       edges.clear();
@@ -588,10 +660,15 @@ int main(int argc, char *argv[])
             //result_file<<gnorm<<std::endl;
             result_file<<"point cloud size: "<<V.rows()<<std::endl;
             //result_file<<"spline\n"<<spline<<std::endl;
-            //result_file<<piece_time<<std::endl;
+            result_file<<piece_time*whole_weight<<std::endl;
 
             //log_data(mesh_file, spline, piece_time);
-
+            double whole_len=0;
+            for(int it=0;it<uav_num;it++)
+            {
+              log_data(it, whole_len, mesh_file, spline_list[it], piece_time);
+            }
+            result_file<<whole_len<<"\n";
             if(if_exit)
               exit(0);
             else

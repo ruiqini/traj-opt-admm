@@ -511,6 +511,23 @@ int main(int argc, char *argv[])
                 piece_time,t_slack,t_lambda);
   
   double whole_time=0;
+
+  energy_file.open (mesh_file + "_energy_file_admm.txt");
+
+  double energy=  lambda*Energy_admm::bound_energy(spline,piece_time);//lambda*Energy_admm::plane_barrier_energy(spline,c_lists, d_lists) +
+    
+    for(int sp_id=0;sp_id<piece_num;sp_id++)
+    {
+        int init=sp_id*(order_num-2);
+
+        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
+
+        energy+=Energy_admm::dynamic_energy(c_spline, piece_time);
+    }
+   double e = ks*Energy::dynamic_energy(spline,piece_time)+ kt*whole_weight*piece_time;
+   std::cout<<energy<<" "<<e<<"\n";
+  energy_file<<energy;
+  energy_file<<" "<<whole_time<<"\n";
   
   if(!gui)
   {
@@ -552,6 +569,9 @@ int main(int argc, char *argv[])
     
         clock_t time1 = clock();
         whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
+
+        energy_file<<" "<<whole_time<<"\n";
+
         std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
         //std::cout<<p0.size()<<std::endl;
         iter++;
@@ -608,7 +628,7 @@ int main(int argc, char *argv[])
       };
       
       viewer.data().line_width = 5.0f;
-      viewer.data().point_size = 2.5f;
+      viewer.data().point_size = 1.5f;
       
       Eigen::MatrixXd C=V;
       

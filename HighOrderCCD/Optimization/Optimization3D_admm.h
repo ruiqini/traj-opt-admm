@@ -552,6 +552,29 @@ public:
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
 
+    energy_file<<spline_energy(spline, piece_time,c_lists, d_lists);
+
+  }
+
+  static double spline_energy(  const Data& spline, const double& piece_time,
+                                const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                const std::vector<std::vector<double>>& d_lists)
+  {
+    double energy=lambda*Energy_admm::plane_barrier_energy(spline,c_lists, d_lists) + 
+                  lambda*Energy_admm::bound_energy(spline,piece_time);
+    
+    for(int sp_id=0;sp_id<piece_num;sp_id++)
+    {
+        int init=sp_id*(order_num-2);
+
+        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
+
+        energy+=Energy_admm::dynamic_energy(c_spline, piece_time);
+    }
+
+    return energy;
+
+
   }
 
 };

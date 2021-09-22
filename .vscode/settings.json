@@ -76,6 +76,13 @@
         "splines": "cpp",
         "csignal": "cpp",
         "codecvt": "cpp",
-        "*.expression": "cpp"
+        "*.expression": "cpp",
+        "optional": "cpp",
+        "string_view": "cpp",
+        "iterator": "cpp",
+        "map": "cpp",
+        "memory_resource": "cpp",
+        "random": "cpp",
+        "set": "cpp"
     }
 }
