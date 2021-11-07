@@ -747,6 +747,9 @@ int main(int argc, char *argv[])
                   result_file<<spline<<std::endl;
                   result_file<<piece_time<<std::endl;
 
+                  log_data(mesh_file, spline, piece_time);
+
+
                   if(if_exit)
                     exit(0);
                   else

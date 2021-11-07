@@ -106,6 +106,7 @@ void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& 
 {
     std::string line;
     std::ifstream myfile ("init/" +mesh_file + "_init_file.txt");
+    
     //V*=0.5;
     Eigen::Vector3d p0;
     std::vector<Eigen::Vector3d> read_points;
@@ -118,7 +119,7 @@ void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& 
         
         iss>>p0(0)>>p0(1)>>p0(2);
         read_points.push_back(p0);
-        
+        //result_file<<2*p0.transpose()<<"\n";
         i++;
       }
       myfile.close();
@@ -126,7 +127,14 @@ void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& 
     }
 
     way_points=read_points;
-    
+    /*
+    std::ofstream ff;
+    ff.open("init/b2.obj_init_file.txt");
+    for(int i=0;i<way_points.size();i++)
+    {
+      ff<<2*way_points[i].transpose()<<"\n";
+    }
+    */
 }
 
 bool edge_collision(const Eigen::MatrixXd& V,BVH& bvh, const std::vector<std::vector<Eigen::MatrixXd>>& edges, 
@@ -769,6 +777,9 @@ int main(int argc, char *argv[])
                   result_file<<V.rows()<<" "<<F.rows()<<std::endl;
                   result_file<<spline<<std::endl;
                   result_file<<piece_time<<std::endl;
+
+                  log_data(mesh_file, spline, piece_time);
+
 
                   if(if_exit)
                     exit(0);
