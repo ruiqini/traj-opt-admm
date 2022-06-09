@@ -20,7 +20,7 @@ mkdir build
 cd build
 cmake ..
 make
-
+```
 ## Data
 
 You can download our dataset here:
