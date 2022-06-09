@@ -29,8 +29,8 @@ You can download our dataset here:
 
 Extract compressed data file, there are four folders inside: `Config_file/`, `init/`, `model/`, `result`. 
 `Config_file/3D.json` saves input parameters in paper.
-`init/name_init.txt` saves initial trajectory of input environment mesh `name`.
-`model/single_name` saves input environment point cloud `name`, for example `name = bridge.obj`.
+`init/name_init.txt` saves initial trajectory of input point cloud `name`.
+`model/single/name` `model/multiple/name` saves input environment point cloud `name`, for example `name = bridge.obj`.
 
 ## Usage
 
