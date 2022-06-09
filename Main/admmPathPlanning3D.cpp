@@ -8,7 +8,6 @@
 #include "HighOrderCCD/OMPL/OMPL.h"
 
 #include "HighOrderCCD/Optimization/Optimization3D_admm.h"
-#include "HighOrderCCD/Optimization/Optimization3D_am.h"
 
 #include "lib/nlohmann/json.hpp"    // https://github.com/nlohmann/json/tree/develop/single_include/nlohmann/json.hpp
 
@@ -74,32 +73,7 @@ void log_data(std::string meshfile, Eigen::MatrixXd spline, double piece_time)
                   len_ccd+=(ccd_traj[i+1]-ccd_traj[i]).norm();;
               }
               std::cout<<"ccd len:"<<len_ccd<<std::endl;
-              
-              std::ofstream curve_file;
-              curve_file.open (meshfile + "_curve_file.txt");
-              for(int i=0;i<ccd_traj.size();i++)
-              {
-                curve_file<<ccd_traj[i].transpose()<<"\n";
-              }
-
-              Eigen::MatrixXd v_ccd(2*ccd_traj.size()-1,3);
-              Eigen::MatrixXi f_ccd(ccd_traj.size()-1,3);
-              for(int i=0;i<(int)ccd_traj.size();i++)
-              {
-                  v_ccd.row(i)=ccd_traj[i].transpose();
-              }
-              for(int i=0;i<(int)ccd_traj.size()-1;i++)
-              {
-                  v_ccd.row(i+ccd_traj.size())=0.5*(ccd_traj[i].transpose()+ccd_traj[i+1].transpose());
-              }
-              for(int i=0;i<(int)ccd_traj.size()-1;i++)
-              {
-                  f_ccd(i,0)=i; f_ccd(i,1)=i+1; f_ccd(i,2)=i+ccd_traj.size();
-              }
-              
-              
-
-              //igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
+ 
 }
 
 void way_point_init(const std::string& mesh_file, std::vector<Eigen::Vector3d>& way_points)
@@ -387,8 +361,11 @@ int main(int argc, char *argv[])
   }
 
   const std::string mesh_file = argv[1];
+  //std::cout<<mesh_file;
 
-  std::ifstream fin("Config File/3D.json");   
+  //const std::string mesh_file =  mesh_name;
+  //std::cout<<mesh_file;
+  std::ifstream fin("Config_File/3D.json");   
   json j = json::parse(fin);
 	fin.close();
 
@@ -421,8 +398,6 @@ int main(int argc, char *argv[])
   //lambda=1.0/margin2;
   
   result_file.open ("result/" +mesh_file + "_result_file_admm.txt");
-
-  
   
   
   int dim = kdop_axis.size();
@@ -447,7 +422,7 @@ int main(int argc, char *argv[])
   Eigen::MatrixXi F;
   
   //igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-  Mesh::readOBJ(mesh_file, V);
+  Mesh::readOBJ("model/single/" + mesh_file, V);
 
   std::cout<<"before bvh init\n";
   BVH bvh;
@@ -520,23 +495,6 @@ int main(int argc, char *argv[])
   
   double whole_time=0;
 
-  energy_file.open (mesh_file + "_energy_file_admm.txt");
-
-  double energy=  lambda*Energy_admm::bound_energy(spline,piece_time);//lambda*Energy_admm::plane_barrier_energy(spline,c_lists, d_lists) +
-    
-    for(int sp_id=0;sp_id<piece_num;sp_id++)
-    {
-        int init=sp_id*(order_num-2);
-
-        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
-
-        energy+=Energy_admm::dynamic_energy(c_spline, piece_time);
-    }
-   double e = ks*Energy::dynamic_energy(spline,piece_time)+ kt*whole_weight*piece_time;
-   std::cout<<energy<<" "<<e<<"\n";
-  energy_file<<energy;
-  energy_file<<" "<<whole_time<<"\n";
-  
   if(!gui)
   {
     automove=true;
@@ -550,7 +508,7 @@ int main(int argc, char *argv[])
             result_file<<"running time: "<<whole_time<<std::endl;
             //result_file<<gnorm<<std::endl;
             result_file<<"point cloud size: "<<V.rows()<<std::endl;
-            result_file<<"spline\n"<<spline<<std::endl;
+            //result_file<<"spline\n"<<spline<<std::endl;
             //result_file<<piece_time<<std::endl;
 
             log_data(mesh_file, spline, piece_time);
@@ -578,7 +536,7 @@ int main(int argc, char *argv[])
         clock_t time1 = clock();
         whole_time+=(time1-time0)/(CLOCKS_PER_SEC/1000);
 
-        energy_file<<" "<<whole_time<<"\n";
+        //energy_file<<" "<<whole_time<<"\n";
 
         std::cout<<"time:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl<<std::endl;
         //std::cout<<p0.size()<<std::endl;
@@ -771,12 +729,19 @@ int main(int argc, char *argv[])
             {
               
                   is_write = false;
+                  /*
                   result_file<<iter<<std::endl;
                   result_file<<whole_time<<std::endl;
                   result_file<<gnorm<<std::endl;
                   result_file<<V.rows()<<" "<<F.rows()<<std::endl;
                   result_file<<spline<<std::endl;
                   result_file<<piece_time<<std::endl;
+                  */
+                  result_file<<"iter: "<<iter<<std::endl;
+                  result_file<<"running time: "<<whole_time<<std::endl;
+                  //result_file<<gnorm<<std::endl;
+                  result_file<<"point cloud size: "<<V.rows()<<std::endl;
+                  //result_file<<"spline\n"<<spline<<std::endl;
 
                   log_data(mesh_file, spline, piece_time);
 

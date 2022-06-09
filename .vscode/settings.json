@@ -58,6 +58,17 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "kroneckerproduct": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "csignal": "cpp",
+        "codecvt": "cpp",
+        "iterator": "cpp",
+        "map": "cpp",
+        "memory_resource": "cpp",
+        "optional": "cpp",
+        "random": "cpp",
+        "set": "cpp",
+        "string_view": "cpp",
+        "variant": "cpp",
+        "bit": "cpp"
     }
 }

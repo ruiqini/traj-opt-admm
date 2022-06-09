@@ -73,31 +73,6 @@ void log_data(int traj_id, double& whole_len, std::string meshfile, Eigen::Matri
               std::cout<<"ccd len:"<<len_ccd<<std::endl;
               whole_len+=len_ccd;
 
-              std::ofstream curve_file;
-              curve_file.open ("multi/"+meshfile + "_curve_file"+std::to_string(traj_id)+".txt");
-              for(int i=0;i<ccd_traj.size();i++)
-              {
-                curve_file<<ccd_traj[i].transpose()<<"\n";
-              }
-
-              Eigen::MatrixXd v_ccd(2*ccd_traj.size()-1,3);
-              Eigen::MatrixXi f_ccd(ccd_traj.size()-1,3);
-              for(int i=0;i<(int)ccd_traj.size();i++)
-              {
-                  v_ccd.row(i)=ccd_traj[i].transpose();
-              }
-              for(int i=0;i<(int)ccd_traj.size()-1;i++)
-              {
-                  v_ccd.row(i+ccd_traj.size())=0.5*(ccd_traj[i].transpose()+ccd_traj[i+1].transpose());
-              }
-              for(int i=0;i<(int)ccd_traj.size()-1;i++)
-              {
-                  f_ccd(i,0)=i; f_ccd(i,1)=i+1; f_ccd(i,2)=i+ccd_traj.size();
-              }
-              
-              
-
-              //igl::write_triangle_mesh("ccd_traj_"+meshfile+".obj",v_ccd,f_ccd);
 }
 
 void way_point_init(const std::string& mesh_file, std::vector<std::vector<Eigen::Vector3d>>& way_points_list)
@@ -500,7 +475,7 @@ int main(int argc, char *argv[])
   }
 
 
-  std::ifstream fin("Config File/3D.json");   
+  std::ifstream fin("Config_File/3D.json");   
   json j = json::parse(fin);
 	fin.close();
 
@@ -551,12 +526,13 @@ int main(int argc, char *argv[])
   }
   //lambda/=epsilon;
 
-  Eigen::MatrixXd V, BV;
-  Eigen::MatrixXi F, BF;
+  Eigen::MatrixXd V;
+  Eigen::MatrixXi F;
   
   const std::string mesh_file = argv[1];
+
   //igl::read_triangle_mesh(mesh_file,V,F);//32770 cylinder
-  Mesh::readOBJ(mesh_file, V);
+  Mesh::readOBJ("model/multiple/" + mesh_file, V);
   V*=5;
   std::cout<<"before bvh init\n";
   BVH bvh;
@@ -662,7 +638,7 @@ int main(int argc, char *argv[])
             //result_file<<gnorm<<std::endl;
             result_file<<"point cloud size: "<<V.rows()<<std::endl;
             //result_file<<"spline\n"<<spline<<std::endl;
-            result_file<<piece_time*whole_weight<<std::endl;
+            //result_file<<piece_time*whole_weight<<std::endl;
 
             //log_data(mesh_file, spline, piece_time);
             double whole_len=0;
@@ -670,7 +646,7 @@ int main(int argc, char *argv[])
             {
               log_data(it, whole_len, mesh_file, spline_list[it], piece_time);
             }
-            result_file<<whole_len<<"\n";
+            //result_file<<whole_len<<"\n";
             if(if_exit)
               exit(0);
             else
@@ -867,17 +843,7 @@ int main(int argc, char *argv[])
         
       }
       
-      igl::read_triangle_mesh("/home/n/ADMM/quadrotor_base.obj",BV,BF);//32770 cylinder
-      BV/=20.0;
-      Eigen::MatrixXd uav_V, tmp_uav_V; uav_V.resize(BV.rows()*uav_num,3);
-      Eigen::MatrixXi uav_F; uav_F.resize(BF.rows()*uav_num,3);
-      for(int i=0;i<uav_num;i++)
-      {
-        uav_V.block(i*BV.rows(),0,BV.rows(),3)=BV;
-        uav_F.block(i*BF.rows(),0,BF.rows(),3)=BF;
-        int size=i*BV.rows();
-        uav_F.block(i*BF.rows(),0,BF.rows(),3)+=Eigen::MatrixXi::Constant(BF.rows()*uav_num,3,size);
-      }
+      
       const auto &pre_draw = [&](igl::opengl::glfw::Viewer & )->bool
       {  
         if(iter<num) 
@@ -894,11 +860,7 @@ int main(int argc, char *argv[])
                 Eigen::MatrixXd basis=std::get<2>(subdivide_tree[k]);
                 Eigen::MatrixXd bz;
 
-                //if(k==15)
-                //{
-                  tmp_uav_V=uav_V;
-                  //viewer.data().set_mesh(tmp_uav_V,uav_F);
-                //}
+                
                 for(int i=0;i<uav_num;i++)
                 {
                   bz=spline_list[i].block<order_num+1,3>(sp_id*(order_num-2),0);
@@ -913,12 +875,7 @@ int main(int argc, char *argv[])
                     }
                   }
 
-                  //if(k==15)
-                  //{
-                    for(int kk=0;kk<BV.rows();kk++)
-                      tmp_uav_V.row(i*BV.rows()+kk)+=P[0]-BV.row(293);
-                    //viewer.data().set_mesh(tmp_uav_V,uav_F);
-                  //}
+                
                   if(k%2==1)
                   {
                     for(int j=0;j<=order_num;j++)
@@ -936,17 +893,7 @@ int main(int argc, char *argv[])
 
                 }
 
-                if(k==14)
-                {
-                  //tmp_uav_V=uav_V;
-                  viewer.data().set_mesh(tmp_uav_V,uav_F);
-                  Eigen::MatrixXd uav_C=tmp_uav_V;
-                  for(int i=0;i<uav_C.rows();i++)
-                  {
-                    uav_C.row(i)<<0.4,0.4,0.4;
-                  }
-                  viewer.data().set_colors(uav_C);
-                }
+                
                 
               }
             }
@@ -955,12 +902,18 @@ int main(int argc, char *argv[])
             {
               
                   is_write = false;
+                  /*
                   result_file<<iter<<std::endl;
                   result_file<<whole_time<<std::endl;
                   result_file<<gnorm<<std::endl;
                   result_file<<V.rows()<<" "<<F.rows()<<std::endl;
                   result_file<<piece_time<<std::endl;
-
+                  */
+                  result_file<<"iter: "<<iter<<std::endl;
+                  result_file<<"running time: "<<whole_time<<std::endl;
+                  //result_file<<gnorm<<std::endl;
+                  result_file<<"point cloud size: "<<V.rows()<<std::endl;
+            
                   if(if_exit)
                     exit(0);
                   else

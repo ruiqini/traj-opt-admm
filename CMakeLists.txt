@@ -67,10 +67,5 @@ MACRO(ADD_EXE NAME)
 ENDMACRO(ADD_EXE)
 
 ADD_EXE(admmPathPlanning3D)
-ADD_EXE(amPathPlanning3D)
 ADD_EXE(multiPathPlanning3D)
-ADD_EXE(testmultiPathPlanning3D)
-ADD_EXE(omplInit)
-ADD_EXE(multiPath)
-ADD_EXE(omplPathPlanning3D)
 
