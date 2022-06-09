@@ -27,7 +27,7 @@ You can download our dataset here:
 
 - [Data](https://drive.google.com/file/d/1XjdUtuxOp9v0_SaCbU5pYmodxKIHr1YO/view?usp=sharing). Extract file in `build/` folder.
 
-Extract compressed data file, there are four folders inside: `Config_file/`, `init/`, `model/`, `result`, put these folders in `build/` folder.
+Extract compressed data file, there are four folders inside: `Config_file/`, `init/`, `model/`, `result/`, put these folders in `build/` folder.
 `Config_file/3D.json` saves input parameters in paper.
 `init/name_init.txt` saves initial trajectory of input point cloud `name`.
 `model/single/name` `model/multiple/name` saves input environment point cloud `name`, for example `name = bridge.obj`.
