@@ -1,6 +1,6 @@
 # Robust Multi-Robot Trajectory Optimization Using Alternating Direction Method of Multiplier
 
-This repository is the official implementation of Robust Multi-Robot Trajectory Optimization Using Alternating Direction Method of Multiplier.
+This repository is the official implementation of [Robust Multi-Robot Trajectory Optimization Using Alternating Direction Method of Multiplier](https://arxiv.org/abs/2111.07016).
 
 ## Installation
 
