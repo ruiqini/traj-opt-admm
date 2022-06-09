@@ -36,11 +36,11 @@ Extract compressed data file, there are four folders inside: `Config_file/`, `in
 
 Run commands for single UAV:
 ```bash
-./admmPathPlanning3D name
+./admmPathPlanning3D bridge.obj
 ```
 Run commands for multiple UAVs:
 ```bash
-./multiPathPlanning3D name
+./multiPathPlanning3D cross.obj
 ```
 Result information will be saved in `result/`.
 
