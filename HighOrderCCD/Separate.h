@@ -36,7 +36,7 @@ class Separate
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
       nvrtx1 = order_num+1;
-      nvrtx2 = 3;
+      nvrtx2 = 1;
       
       const double *A_data=position.data();
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
@@ -123,15 +123,20 @@ class Separate
       }
       */
       double *c_data=c.data();
-      double d0=INFINITY;
-      for(int i=0;i<3;i++)
+      double d0;//=INFINITY;
+      /*
+      for(int i=0;i<1;i++)
       {
         double d_=-c_data[0]*B_data[i]
-                  -c_data[1]*B_data[3+i]
-                  -c_data[2]*B_data[6+i];//-c.dot(_position.row(i));
+                  -c_data[1]*B_data[1+i]
+                  -c_data[2]*B_data[2+i];//-c.dot(_position.row(i));
         if(d0>d_)
           d0=d_;
       }
+      */
+      d0=-c_data[0]*B_data[0]
+         -c_data[1]*B_data[1]
+         -c_data[2]*B_data[2];
       /*
       double d1=-INFINITY;
       

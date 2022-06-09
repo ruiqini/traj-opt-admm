@@ -34,8 +34,11 @@ class CCD
       
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
-      nvrtx1 = order_num+1;
-      nvrtx2 = 3;
+      int rows=position.rows();
+      int _rows=_position.rows();
+
+      nvrtx1 = rows;
+      nvrtx2 = _rows;
       
       const double *A_data=position.data();  
       double **vrtx1 = (double **)malloc(nvrtx1 * sizeof(double *));
@@ -134,7 +137,7 @@ class CCD
       // For importing openGJK this is Step 2: adapt the data structure for the
       // two bodies that will be passed to the GJK procedure. 
       nvrtx1 = 2*(order_num+1);
-      nvrtx2 = 3;
+      nvrtx2 = 1;
 
       const double *A_data=position0.data(); 
 
@@ -356,6 +359,8 @@ class CCD
       const double *B_data=_position.data();
       double *kdop_data=kdop_matrix.data();
       int dim = kdop_axis.size();
+      int rows=position.rows();
+      int _rows=_position.rows();
       double level;
       double x,y,z;
       for(int k=0;k<dim;k++)
@@ -366,11 +371,11 @@ class CCD
 
         double upperA=-INFINITY;
         double lowerA=INFINITY;
-        for(int i=0;i<(order_num+1);i++)
+        for(int i=0;i<rows;i++)
         {
           level = x*A_data[i] +
-                  y*A_data[i+(order_num+1)]+
-                  z*A_data[i+2*(order_num+1)];//kdop_axis[k].dot(A.row(i));
+                  y*A_data[i+rows]+
+                  z*A_data[i+2*rows];//kdop_axis[k].dot(A.row(i));
           if(level<lowerA)
             lowerA=level;
           if(level>upperA)
@@ -379,16 +384,25 @@ class CCD
 
         double upperB=-INFINITY;
         double lowerB=INFINITY;
-        for(int i=0;i<3;i++)
+        
+        for(int i=0;i<_rows;i++)
         {
           level = x*B_data[i] +
-                  y*B_data[i+3]+
-                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+                  y*B_data[i+_rows]+
+                  z*B_data[i+2*_rows];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
             upperB=level;
         }
+        
+       /*
+        level = x*B_data[0] +
+                y*B_data[1] +
+                z*B_data[2];
+        lowerB=level;
+        upperB=level;
+        */
         if(upperB<lowerA-d || upperA<lowerB-d)
           return false;
       }
@@ -431,16 +445,24 @@ class CCD
 
         double upperB=-INFINITY;
         double lowerB=INFINITY;
-        for(int i=0;i<3;i++)
+        /*
+        for(int i=0;i<1;i++)
         {
           level = x*B_data[i] +
-                  y*B_data[i+3]+
-                  z*B_data[i+2*3];//kdop_axis[k].dot(_position.row(i));
+                  y*B_data[i+1]+
+                  z*B_data[i+2];//kdop_axis[k].dot(_position.row(i));
           if(level<lowerB)
             lowerB=level;
           if(level>upperB)
             upperB=level;
         }
+        */
+        level = x*B_data[0] +
+                y*B_data[1] +
+                z*B_data[2];
+        lowerB=level;
+        upperB=level;
+
         if(upperB<lowerA-d || upperA<lowerB-d)
           return false;
       }

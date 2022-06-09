@@ -33,7 +33,7 @@ public:
   typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
 
   static void optimization(Data& spline, double& piece_time,
-                           const std::vector<Eigen::Matrix3d>& face_list,
+                           const std::vector<Eigen::RowVector3d>& vertex_list,
                            BVH& bvh)
   {
 
@@ -41,13 +41,13 @@ public:
       std::vector<std::vector<double>> d_lists;
       clock_t time_0 = clock();
 
-      separate_plane(spline,face_list, c_lists, d_lists, bvh);
+      separate_plane(spline,vertex_list, c_lists, d_lists, bvh);
       
       clock_t time0 = clock();
       
       std::cout<<"\nupdate spline\n";
       update_spline(spline,  piece_time,
-                    face_list, bvh,
+                    vertex_list, bvh,
                     c_lists, d_lists);
       
       clock_t time1 = clock();     
@@ -64,7 +64,7 @@ public:
   }
 
   static void separate_plane(const Data& spline, 
-                             const std::vector<Eigen::Matrix3d>& face_list,
+                             const std::vector<Eigen::RowVector3d>& vertex_list,
                              std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                              std::vector<std::vector<double>>& d_lists,
                              BVH& bvh)
@@ -105,7 +105,7 @@ public:
 
               //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
               
-              Eigen::Matrix3d _position=face_list[ob_id];
+              Eigen::RowVector3d _position=vertex_list[ob_id];
               //_position<<V.row(f0),V.row(f1),V.row(f2);
 
               Eigen::Vector3d c;
@@ -129,7 +129,7 @@ public:
   }
 
   static void update_spline(Data& spline, double& piece_time,
-                            const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh,
+                            const std::vector<Eigen::RowVector3d>& vertex_list, BVH& bvh,
                             const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                             const std::vector<std::vector<double>>& d_lists)
   {
@@ -144,7 +144,7 @@ public:
     //clock_t time1 = clock();
                               
     spline_line_search( spline, direction,  piece_time, t_direction,
-                        face_list, bvh, 
+                        vertex_list, bvh, 
                         c_lists, d_lists);
     //clock_t time2 = clock();
  
@@ -173,13 +173,13 @@ public:
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
 
-    Eigen::VectorXd ng = -grad.segment(6,(t_n-4)*3);
+    Eigen::VectorXd g = grad.segment(6,(t_n-4)*3);
     Eigen::MatrixXd h = hessian.block(6,6,(t_n-4)*3,(t_n-4)*3);
     
-    Eigen::VectorXd ng0((t_n-4)*3+1);
+    Eigen::VectorXd g0((t_n-4)*3+1);
     Eigen::MatrixXd h0((t_n-4)*3+1,(t_n-4)*3+1);
-    ng0.head((t_n-4)*3)=ng;
-    ng0((t_n-4)*3)=-g_t;
+    g0.head((t_n-4)*3)=g;
+    g0((t_n-4)*3)=g_t;
 
     h0.block(0,0,(t_n-4)*3,(t_n-4)*3)=h;
     h0((t_n-4)*3,(t_n-4)*3)=h_t;//h_t;
@@ -219,9 +219,9 @@ public:
     solver.compute(H);
     
 
-    x0 = solver.solve(ng0);
-    //x0=ng0;
-    wolfe=x0.dot(ng0);
+    x0 = -solver.solve(g0);
+    //x0=-g0;
+    wolfe=-x0.dot(g0);
     
     clock_t time1 = clock();
     std::cout<<"\ntime solve:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
@@ -240,24 +240,24 @@ public:
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
     
-    std::cout<<"gn:"<<ng0.norm()<<std::endl;
+    std::cout<<"gn:"<<g0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl<<std::endl;
     
-    gnorm=ng0.norm();
+    gnorm=g0.norm();
 
     return 1;
     //std::cout<<"gnorm:"<<gnorm<<std::endl;
   }
 
   static void spline_line_search(Data& spline, const Data& direction, double& piece_time, const double& t_direction,
-                                 const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh, 
+                                 const std::vector<Eigen::RowVector3d>& vertex_list, BVH& bvh, 
                                  const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                                  const std::vector<std::vector<double>>& d_lists)
   {
     clock_t time0 = clock();
 
-    double step=Step::position_step(spline, direction,face_list, bvh); 
+    double step=Step::position_step(spline, direction,vertex_list, bvh); 
     //double step=Step::plane_step(spline, direction,c_lists, d_lists);
     //double step=Step::mix_step(spline, direction,V,F, bvh,c_lists, d_lists);
     
@@ -291,8 +291,6 @@ public:
       piece_time=init_time+step*t_direction;
     }
     
-
-    max_step=step;
     
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
@@ -301,6 +299,8 @@ public:
                " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
+
+    energy_file<<spline_energy(spline, piece_time,c_lists, d_lists);
 
   }
 
@@ -473,7 +473,7 @@ public:
         hessian.block(0,0,num,num) += ks/std::pow(piece_time,2*der_num-1)*B;
 
         grad(num)+=-(2*der_num-1)*dynamic_energy/piece_time;
-        //g_t+=kt;
+        //grad(num)+=kt;
         grad(num)+=kt*1.1*std::pow(piece_time,0.1);
 
         hessian(num,num)+=(2*der_num-1)*(2*der_num)*dynamic_energy/(piece_time*piece_time);  

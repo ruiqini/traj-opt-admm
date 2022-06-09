@@ -143,8 +143,8 @@ IGL_INLINE void igl::cotmatrix(
       }
       A.row(np).setConstant(1);
       b(np) = 1;
-      const VectorXS w =
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd>(A).solve(b);
+      const VectorXS w ;//=
+        //Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd>(A).solve(b);
       X.row(np) = w.transpose()*X.topRows(np);
       // scatter w into new row of P
       for(Index i = 0;i<np;i++) { Pijv.emplace_back(n+p,I(C(p)+i),w(i)); }

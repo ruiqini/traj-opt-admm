@@ -92,7 +92,7 @@ void BVH::InitPointcloud(const Eigen::MatrixXd& V)
 
 }
 
-void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_pair, double margin)
+void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_pair, double d)
 {
     int dim = aabb_axis.size();
     std::vector<double> lowerBound(dim);
@@ -101,6 +101,9 @@ void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_p
        
     std::vector<Eigen::RowVector3d> P(2);
 
+    
+
+    
         for(int k=0;k<dim;k++)
         {
           upperBound[k]=-INFINITY;
@@ -125,11 +128,25 @@ void BVH::EdgeCollision(const Data& edge, std::vector<unsigned int>& collision_p
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pair=ob_tree.query(convex, margin);
+        collision_pair=pc_tree.query(convex, d);
+    
 
 }
 
-void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>>& collision_pairs, double margin)
+void BVH::SelfEdgeCollision(const std::vector<Data>& edges, std::vector<id_pair>& collision_pairs, double d)
+{
+   for(int j0=0;j0<uav_num;j0++)
+   {
+      for(int j1=j0+1;j1<uav_num;j1++)
+      {
+        if(CCD::KDOPDCD(edges[j0],edges[j1], d))
+           collision_pairs.push_back(std::make_pair(j0,j1));
+      }
+   }
+
+}
+
+void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>>& collision_pairs, double d)
 {
     unsigned int n_tr=subdivide_tree.size();
     int dim = aabb_axis.size();
@@ -170,12 +187,12 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pairs.push_back(ob_tree.query(convex, margin));
+        collision_pairs.push_back(pc_tree.query(convex, d));
     }
     
 }
 
-void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<std::vector<unsigned int>>& collision_pairs, double margin)
+void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<std::vector<unsigned int>>& collision_pairs, double d)
 {
     unsigned int n_tr=subdivide_tree.size();
     int dim = aabb_axis.size();
@@ -228,11 +245,11 @@ void BVH::CCDCollision(const Data& spline, const Data& direction, std::vector<st
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
-        collision_pairs.push_back(ob_tree.query(convex, margin));
+        collision_pairs.push_back(pc_tree.query(convex, d));
     }
 }
 
-void BVH::SelfDCDCollision(const std::vector<Data>& P, std::vector<id_pair>& collision_pair, double margin)
+void BVH::SelfDCDCollision(const std::vector<Data>& P, std::vector<id_pair>& collision_pair, double d)
 {
     aabb::Tree self_tree;
     unsigned int n_tr=P.size();
@@ -265,11 +282,11 @@ void BVH::SelfDCDCollision(const std::vector<Data>& P, std::vector<id_pair>& col
         }
         self_tree.insertParticle(i, lowerBound, upperBound);
     }
-    collision_pair=self_tree.query(margin);
+    collision_pair=self_tree.query(d);
 
 }
 
-void BVH::SelfCCDCollision(const std::vector<Data>& P, const std::vector<Data>& D, std::vector<id_pair>& collision_pair, double margin)
+void BVH::SelfCCDCollision(const std::vector<Data>& P, const std::vector<Data>& D, std::vector<id_pair>& collision_pair, double d)
 {
     aabb::Tree self_tree;
     unsigned int n_tr=P.size();
@@ -308,7 +325,7 @@ void BVH::SelfCCDCollision(const std::vector<Data>& P, const std::vector<Data>& 
         }
         self_tree.insertParticle(i, lowerBound, upperBound);
     }
-    collision_pair=self_tree.query(margin);
+    collision_pair=self_tree.query(d);
 
 }
 

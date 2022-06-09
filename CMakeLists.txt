@@ -63,25 +63,14 @@ MACRO(ADD_EXE NAME)
   ELSE(MSVC)
       TARGET_LINK_LIBRARIES(${NAME} admmCCD gomp ${ALL_STATIC_LIBRARIES})
   ENDIF(MSVC)
-  TARGET_LINK_LIBRARIES(${NAME} openGJKlib igl::core igl::opengl_glfw)
+  TARGET_LINK_LIBRARIES(${NAME} openGJKlib igl::core igl::opengl_glfw)#igl::core igl::opengl_glfw
 ENDMACRO(ADD_EXE)
-
-#TEST
-MACRO(ADD_TEST NAME)
-  ADD_EXECUTABLE(${NAME} test/${NAME}.cpp)
-  IF(MSVC)
-      TARGET_LINK_LIBRARIES(${NAME} admmCCD ${ALL_STATIC_LIBRARIES})
-  ELSE(MSVC)
-      TARGET_LINK_LIBRARIES(${NAME} admmCCD gomp ${ALL_STATIC_LIBRARIES})
-  ENDIF(MSVC)
-  TARGET_LINK_LIBRARIES(${NAME} openGJKlib igl::core igl::opengl_glfw)
-ENDMACRO(ADD_TEST)
-
-
 
 ADD_EXE(admmPathPlanning3D)
 ADD_EXE(amPathPlanning3D)
 ADD_EXE(multiPathPlanning3D)
-ADD_EXE(targetPathPlanning3D)
+ADD_EXE(testmultiPathPlanning3D)
+ADD_EXE(omplInit)
+ADD_EXE(multiPath)
+ADD_EXE(omplPathPlanning3D)
 
-ADD_TEST(test_admm)

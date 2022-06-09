@@ -15,22 +15,20 @@ class myMotionValidator : public ob::MotionValidator
 public:
    
     myMotionValidator(ob::SpaceInformation* si, 
-                      Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
-      F=_F;
+      edges=_edges;
       bvh=&_bvh;
     }
  
     myMotionValidator(const ob::SpaceInformationPtr &si, 
-                      Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                        BVH& _bvh) : ob::MotionValidator(si)
     {
       V=_V;
-      F=_F;
+      edges=_edges;
       bvh=&_bvh;
     }
 
@@ -46,36 +44,34 @@ public:
       double* gDouble=gv->values;
       //Cold ret=Eigen::Map<const Eigen::Matrix<double,-1,1>>(sv->values,_body.nrDOF()).cast<scalarD>();
       //int num=3;
+      
       Eigen::MatrixXd edge(2,3);
-      edge(0,0)=sDouble[0];
-      edge(0,1)=sDouble[1];
-      edge(0,2)=sDouble[2];
 
-      edge(1,0)=gDouble[0];
-      edge(1,1)=gDouble[1];
-      edge(1,2)=gDouble[2];
-      std::cout<<edge<<"\n\n";
+      
+        edge(0,0)=sDouble[0];
+        edge(0,1)=sDouble[1];
+        edge(0,2)=sDouble[2];
+
+        edge(1,0)=gDouble[0];
+        edge(1,1)=gDouble[1];
+        edge(1,2)=gDouble[2];
+       
       std::vector<unsigned int> collision_pair;
         //bvh.CheckCollision(collision_pair,margin);
-      bvh->EdgeCollision(edge, collision_pair,offset);
+      bvh->EdgeCollision(edge, collision_pair,offset+0.5*margin);
 
-      int collision_size=collision_pair.size();
-      std::cout<<collision_size<<"\n\n";
-      if(collision_size==0)
-         return valid;
-      else
-      {
+      //std::cout<<collision_size<<"\n\n";
+      
+        int collision_size=collision_pair.size();
+
         for(int i=0;i<collision_size;i++)
         {
             //int ob_id=*it;
             int ob_id=collision_pair[i];
 
-            int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
-            
-            Eigen::Matrix3d _position;
-            _position<<V.row(f0),V.row(f1),V.row(f2);
+            Eigen::RowVector3d _position=V.row(ob_id);
 
-            bool is_collided= CCD::GJKDCD(edge,_position, offset);  //cgal
+            bool is_collided= CCD::GJKDCD(edge,_position, offset+0.5*margin);  //cgal
             if(is_collided)
             {
                 return !valid;
@@ -83,7 +79,19 @@ public:
             
         }
 
+      for(int i=0;i<(int)edges.size();i++)
+      {
+        for(int j=1;j<(int)edges[i].size()-1;j++)
+        {
+          bool is_collided= CCD::GJKDCD(edge,edges[i][j], offset+0.5*margin);  //cgal
+          if(is_collided)
+          {
+              return !valid;
+          }
+        }
       }
+      
+      
 
       return valid;
       //std::cout<<"check3"<<std::endl;
@@ -100,30 +108,35 @@ public:
     }
     
     Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
+    std::vector<std::vector<Eigen::MatrixXd>> edges;
     BVH* bvh;
     
 };
 //OMPL
-OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::MatrixXd _V,
-           Eigen::MatrixXi _F,
+OMPL::OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, 
+          Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
            BVH& _bvh)
 {
   int dim=lowerBound.size();
   _state=ob::StateSpacePtr(new ob::RealVectorStateSpace(dim));
   ompl::base::RealVectorBounds bounds(dim);
-  //lower
-  for(int i=0; i<dim; i++)
-    bounds.setLow(i,lowerBound(i));
-  //upper
-  for(int i=0; i<dim; i++)
-    bounds.setHigh(i,upperBound(i));
+  
+  
+    //lower
+    for(int i=0; i<dim; i++)
+      bounds.setLow(i,lowerBound(i));
+    //upper
+    for(int i=0; i<dim; i++)
+      bounds.setHigh(i,upperBound(i));
+
+  
+  
   //setup
   _state->as<ob::RealVectorStateSpace>()->setBounds(bounds);
   
   _stateInfo=ob::SpaceInformationPtr(new ob::SpaceInformation(_state));
 
-  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_F,_bvh);
+  myMotionValidator *motion_validator=new myMotionValidator(_stateInfo,_V,_edges,_bvh);
   ob::MotionValidatorPtr mv(motion_validator);
   
   _stateInfo->setMotionValidator(mv);//std::make_shared<myMotionValidator>(_stateInfo));
@@ -149,14 +162,13 @@ bool OMPL::isValid(const ob::State* s)
 }
 */
 
-void OMPL::getPath(std::vector<Eigen::VectorXd> &path) //const const 
+void OMPL::getPath(std::vector<Eigen::Vector3d> &path) //const const 
 {
   path=_path;
 }
 
-bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal, 
-                      Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
+bool OMPL::planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal, 
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                       BVH& _bvh, int time)//,std::function<bool(const Mesh&)> fn
 {
   ob::ProblemDefinitionPtr prob(new ob::ProblemDefinition(_stateInfo));
@@ -165,10 +177,14 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
   std::shared_ptr<ob::RealVectorStateSpace::StateType> goalState(new ob::RealVectorStateSpace::StateType);
   std::shared_ptr<ob::RealVectorStateSpace::StateType> startState(new ob::RealVectorStateSpace::StateType);
   
+ 
+  
   startState->values=start.data();
+  
   prob->addStartState(startState.get());
   //set goal
-    std::cout<<"goal"<<std::endl;
+  
+  std::cout<<"goal"<<std::endl;
 
   
   goalState->values=NULL;
@@ -179,7 +195,7 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
   prob->setGoalState(goalState.get());
     
     
-  myMotionValidator mv(_stateInfo,_V,_F,_bvh);
+  myMotionValidator mv(_stateInfo,_V,_edges, _bvh);
   std::cout<<"test:"<<mv.checkMotion(startState.get(),goalState.get())<<std::endl;
     /*
     if(goalState->values)
@@ -213,18 +229,24 @@ bool OMPL::planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
 
     const std::vector< ob::State* > &states = path.getStates();
     ob::State *state;
-    int dim=start.size();
-    for( size_t i = 0 ; i < states.size( ) ; ++i )
-    {
+    int dim=3;
+    _path.clear();
+    
+    Eigen::VectorXd ss(dim);
+    
+      for( size_t i = 0 ; i < states.size( ) ; ++i )
+      {
         state = states[ i ]->as< ob::State >( );
 
-        Eigen::VectorXd ss(dim);
         ss(0) = state->as<ob::RealVectorStateSpace::StateType>()->values[0];
         ss(1) = state->as<ob::RealVectorStateSpace::StateType>()->values[1];
         ss(2) = state->as<ob::RealVectorStateSpace::StateType>()->values[2];
-       
+    
         _path.push_back(ss);
-    }
+
+      }
+    
+    
     
     return true;
   } else {

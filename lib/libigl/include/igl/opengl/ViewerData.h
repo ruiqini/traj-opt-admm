@@ -155,8 +155,6 @@ public:
   IGL_INLINE void set_edges (const Eigen::MatrixXd& P, const Eigen::MatrixXi& E, const Eigen::MatrixXd& C);
   // Alec: This is very confusing. Why does add_edges have a different API from
   // set_edges?
-  IGL_INLINE void change_edges (const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2, const Eigen::MatrixXd& C);
-
   IGL_INLINE void add_edges (const Eigen::MatrixXd& P1, const Eigen::MatrixXd& P2, const Eigen::MatrixXd& C);
   // Sets edges given a list of points and eminating vectors
   IGL_INLINE void set_edges_from_vector_field(

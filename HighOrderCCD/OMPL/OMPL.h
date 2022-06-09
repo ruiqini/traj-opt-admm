@@ -24,18 +24,16 @@ public:
   
 
   OMPL(Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound,
-        Eigen::MatrixXd _V,
-        Eigen::MatrixXi _F,
+        Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
         BVH& _bvh);
   bool checkMotion(const ob::State *s1, const ob::State *s2);
   int nrBroad() const;
   int nrNarrow() const;
-  void getPath(std::vector<Eigen::VectorXd> &path);//const;const 
-  bool planRRT( Eigen::VectorXd start,  Eigen::VectorXd goal,
-                      Eigen::MatrixXd _V,
-                      Eigen::MatrixXi _F,
+  void getPath(std::vector<Eigen::Vector3d> &path);//const;const 
+  bool planRRT( Eigen::Vector3d start,  Eigen::Vector3d goal,
+                      Eigen::MatrixXd _V, std::vector<std::vector<Eigen::MatrixXd>> _edges,
                       BVH& _bvh,
-                       int time=60);//std::function<bool(const Mesh&)> fn
+                       int time=1200);//std::function<bool(const Mesh&)> fn
   ob::OptimizationObjectivePtr getClearanceObjective(const ob::SpaceInformationPtr& si);
 
   //void returnToStart(const Mesh& start);
@@ -47,7 +45,7 @@ protected:
   //options
   bool _AECC,_env,_self;
   //result
-  std::vector<Eigen::VectorXd> _path;
+  std::vector<Eigen::Vector3d> _path;
   int _nrBroad;
   int _nrNarrow;
 };

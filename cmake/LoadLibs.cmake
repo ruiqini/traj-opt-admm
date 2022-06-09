@@ -19,7 +19,20 @@ ENDIF()
 #LIBIGL
 option(LIBIGL_WITH_OPENGL            "Use OpenGL"         ON)
 option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"           ON)
+option(LIBIGL_WITH_PNG               "Use PNG"            ON)
 
+if(LIBIGL_WITH_PNG)
+  # png/ module is anomalous because it also depends on opengl it really should
+  # be moved into the opengl/ directory and namespace ...
+  if(TARGET igl_opengl)
+    if(NOT TARGET stb_image)
+      igl_download_stb()
+      add_subdirectory(${LIBIGL_EXTERNAL}/stb stb_image)
+    endif()
+    compile_igl_module("png" "")
+    target_link_libraries(igl_png ${IGL_SCOPE} igl_stb_image igl_opengl)
+  endif()
+endif()
 
 find_package(LIBIGL REQUIRED QUIET)
 

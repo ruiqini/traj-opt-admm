@@ -7,6 +7,9 @@
 #include <fstream>
 #include <stdlib.h>
 #include <stdint.h>
+#include <cstdio>
+#include <sstream>
+#include <iterator>
 
 #include <vector>
 #include <stdio.h>
@@ -37,9 +40,8 @@ extern int trajectory_num, piece_num, uav_num;
 extern int res;
 extern int iter;
 extern double epsilon, 
-              distance, 
               margin, 
-              max_step, lambda, wolfe, offset ,
+              lambda, wolfe, offset ,
               gnorm, gtime, tnorm,
               mu;
 
@@ -47,7 +49,8 @@ extern std::vector< std::tuple< int, std::pair<double,double>,
                     Eigen::MatrixXd > > subdivide_tree;
 extern std::vector<std::vector< Eigen::MatrixXd>  > A_list, A_vel_list, A_acc_list;
 /*change to vector<vector<pair<>,matrix>>>*/
-extern bool automove, step_choose, adaptive_change, optimize_time;
+extern bool automove;
+extern std::ofstream energy_file;
 extern std::ofstream  result_file,  init_file;
 
 extern Eigen::MatrixXd M_dynamic;
@@ -309,6 +312,82 @@ class Blossom
    coeff=M;
   }
 
+};
+
+class Mesh
+{
+  public:
+    static void readOBJ(const std::string& mesh_file, Eigen::MatrixXd& V)
+    {
+        
+  
+
+      // variables and constants to assist parsing the .obj file
+      // Constant strings to compare against
+      std::string v("v");
+      std::string tic_tac_toe("#");
+      #ifndef IGL_LINE_MAX
+      #  define IGL_LINE_MAX 2048
+      #endif
+
+      #ifndef MATERIAL_LINE_MAX
+      #  define MATERIAL_LINE_MAX 2048
+      #endif
+
+      char line[IGL_LINE_MAX];
+      //char currentmaterialref[MATERIAL_LINE_MAX] = "";
+      //bool FMwasinit = false;
+      //int line_no = 1, previous_face_no=0, current_face_no = 0;
+
+      FILE * obj_file = fopen(mesh_file.c_str(),"r");
+      
+      int vertex_num=0;
+      std::vector<std::vector<double> > v_list;
+      v_list.clear();
+      while (fgets(line, IGL_LINE_MAX, obj_file) != NULL)
+      {
+        char type[IGL_LINE_MAX];
+        // Read first word containing type
+        if(sscanf(line, "%s",type) == 1)
+        {
+          // Get pointer to rest of line right after type
+          //char * l = &line[strlen(type)];
+          if(type == v)
+          {
+            std::istringstream ls(&line[1]);
+            std::vector<double > vertex{ std::istream_iterator<double >(ls), std::istream_iterator<double >() };
+
+            
+          
+            v_list.push_back(vertex);
+            vertex_num++;
+          }
+          else
+          {
+            //ignore any other lines
+            if(vertex_num>10)
+            {
+              break;
+            }
+          }
+        }else
+        {
+          // ignore empty line
+        }
+        //line_no++;
+      }
+
+      V.resize(vertex_num,3);
+      for(int i=0;i<vertex_num;i++)
+      {
+        V(i,0)=v_list[i][0];
+        V(i,1)=v_list[i][1];
+        V(i,2)=v_list[i][2];
+
+      }
+  
+
+    }
 };
 
 PRJ_END

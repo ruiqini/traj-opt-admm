@@ -29,7 +29,7 @@ public:
   static void optimization(Data& spline, double& piece_time,
                            Data& p_slack, Eigen::VectorXd& t_slack, 
                            Data& p_lambda, Eigen::VectorXd& t_lambda, 
-                           const std::vector<Eigen::Matrix3d>& face_list,
+                           const std::vector<Eigen::RowVector3d>& vertex_list,
                            BVH& bvh)
   {
 
@@ -37,7 +37,7 @@ public:
       std::vector<std::vector<double>> d_lists;
       clock_t time_0 = clock();
 
-      separate_plane(spline, face_list, c_lists, d_lists, bvh);
+      separate_plane(spline, vertex_list, c_lists, d_lists, bvh);
       
       clock_t time0 = clock();
       
@@ -45,7 +45,7 @@ public:
       update_spline(spline,  piece_time,
                     p_slack, t_slack,
                     p_lambda,  t_lambda,
-                    face_list, bvh,
+                    vertex_list, bvh,
                     c_lists, d_lists);
       
       clock_t time1 = clock();     
@@ -67,7 +67,7 @@ public:
   }
 
   static void separate_plane(const Data& spline, 
-                             const std::vector<Eigen::Matrix3d>& face_list,
+                             const std::vector<Eigen::RowVector3d>& vertex_list,
                              std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                              std::vector<std::vector<double>>& d_lists,
                              BVH& bvh)
@@ -89,8 +89,8 @@ public:
           
             std::vector<unsigned int> collision_pair=collision_pairs[tr_id];
             int collision_size =collision_pair.size();
-            if(collision_size==0)
-              continue;
+            //if(collision_size==0)
+            //  continue;
 
             int sp_id=std::get<0>(subdivide_tree[tr_id]);
 
@@ -108,12 +108,13 @@ public:
 
               //int f0=F(ob_id,0); int f1=F(ob_id,1); int f2=F(ob_id,2);
               
-              Eigen::Matrix3d _position=face_list[ob_id];
+              Eigen::RowVector3d _position=vertex_list[ob_id];
 
               Eigen::Vector3d c;
               double d;
               if(CCD::KDOPDCD(P, _position,offset+ margin))
               {
+                /*
                 if(Separate::opengjk(P, _position, offset+margin,
                                         c, d))//cgal
                 {
@@ -121,7 +122,7 @@ public:
                   c_lists[tr_id].push_back(c);
                   d_lists[tr_id].push_back(d);
                 }
-                /*
+                */
                 if(is_optimal_plane)
                 {
                   if(is_seperate[tr_id][ob_id]==false)
@@ -133,24 +134,15 @@ public:
                       seperate_d[tr_id][ob_id]=d;
                       is_seperate[tr_id][ob_id]=true;
 
-                      //c_lists[tr_id].push_back(c);
-                      //d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
-                      
+                      //if(tr_id==23 && ob_id==19252)
+                      //{
+                      //  double kk;
+                      //  std::cin>>kk;
+                      //}
                     }
                   }
                   
-                  else
-                  {
-                    c=seperate_c[tr_id][ob_id]; 
-                    d=seperate_d[tr_id][ob_id];
-                    Optimal_plane::optimal_cd(P,  _position, 
-                                              c,  d);
-                    seperate_c[tr_id][ob_id]=c; 
-                    seperate_d[tr_id][ob_id]=d;
-
-                    c_lists[tr_id].push_back(c);
-                    d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
-                  }
+                  
                   
                 }
                 else
@@ -160,35 +152,46 @@ public:
                   {
             
                     c_lists[tr_id].push_back(c);
-                    d_lists[tr_id].push_back(d-0.5*offset);
+                    d_lists[tr_id].push_back(d);
                   }
                 }
-                */
+                
               }
 
 
             } 
-            /* 
+            
             if(is_optimal_plane)
-                for(int ob_id=0;ob_id<(int)face_list.size();ob_id++)
+                for(int ob_id=0;ob_id<(int)vertex_list.size();ob_id++)
                 {
                   if(is_seperate[tr_id][ob_id]==true)
                   {
                     Eigen::Vector3d c;
                     double d;
-                    Eigen::Matrix3d _position=face_list[ob_id];
+                    Eigen::RowVector3d _position=vertex_list[ob_id];
                       c=seperate_c[tr_id][ob_id]; 
                       d=seperate_d[tr_id][ob_id];
+                      /*
+                      std::cout<<tr_id<<" "<<ob_id<<"\n";
+                      std::cout<<Optimal_plane::barrier_energy(P, _position, 
+                                 c,  d)<<"\n";
+                      if(std::isnan(d))
+                      {
+                        std::cout<<"sep "<<c.transpose()<<" "<<d<<"\n";
+                        double t;
+                        std::cin>>t;
+                      }
+                      */
                       Optimal_plane::optimal_cd(P,  _position, 
                                               c,  d);
                       seperate_c[tr_id][ob_id]=c; 
                       seperate_d[tr_id][ob_id]=d;
 
                       c_lists[tr_id].push_back(c);
-                      d_lists[tr_id].push_back(d-0.5*offset);//-0.5*offset
+                      d_lists[tr_id].push_back(d);//-0.5*offset
                   }                  
                 }   
-           */
+           
         }
 
   }
@@ -196,7 +199,7 @@ public:
   static void update_spline(Data& spline, double& piece_time,
                             const Data& p_slack, const Eigen::VectorXd& t_slack,
                             const Data& p_lambda, const Eigen::VectorXd& t_lambda,
-                            const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh,
+                            const std::vector<Eigen::RowVector3d>& vertex_list, BVH& bvh,
                             const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                             const std::vector<std::vector<double>>& d_lists)
   {
@@ -215,7 +218,7 @@ public:
     spline_line_search( spline, direction,  piece_time, t_direction,
                         p_slack, t_slack,
                         p_lambda,  t_lambda,
-                        face_list, bvh, 
+                        vertex_list, bvh, 
                         c_lists, d_lists);
     //clock_t time2 = clock();
     
@@ -230,7 +233,7 @@ public:
                                    Data& p_lambda,  Eigen::VectorXd& t_lambda)
   {
 
-
+    double error=0;
     for(int sp_id=0;sp_id<piece_num;sp_id++)
     {
         int init=sp_id*(order_num-2);
@@ -252,7 +255,7 @@ public:
                                         p_part,  t_part, 
                                         p_lambda_part, t_lambda_part, 
                                         grad, hessian);
-        Eigen::VectorXd ng0;
+        Eigen::VectorXd g0;
         Eigen::MatrixXd h0;
         int t_n;
 
@@ -261,11 +264,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(6,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(6,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(6,6,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -280,11 +283,11 @@ public:
         {
           t_n=order_num+1-2;
 
-          ng0.resize(t_n*3+1);
+          g0.resize(t_n*3+1);
           h0.resize(t_n*3+1,t_n*3+1);
 
-          ng0.head(t_n*3)=-grad.segment(0,t_n*3);
-          ng0(t_n*3)=-grad(3*(order_num+1));
+          g0.head(t_n*3)=grad.segment(0,t_n*3);
+          g0(t_n*3)=grad(3*(order_num+1));
 
           h0.block(0,0,t_n*3,t_n*3)=hessian.block(0,0,t_n*3,t_n*3);
           h0(t_n*3,t_n*3)=hessian(3*(order_num+1),3*(order_num+1));//h_t;
@@ -299,7 +302,7 @@ public:
         {
           t_n=order_num+1;
           h0=hessian;
-          ng0=-grad;
+          g0=grad;
 
         }
 
@@ -324,10 +327,10 @@ public:
           }
         
           
-          x0 = solver.solve(ng0);
+          x0 = -solver.solve(g0);
           
-          //x0=ng0;
-          wolfe=x0.dot(ng0);
+          //x0=-g0;
+          wolfe=-x0.dot(g0);
 
           Data direction;
           double t_direction;
@@ -386,8 +389,12 @@ public:
         p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0)+=mu*(c_spline-p_part);
 
         t_lambda(sp_id)+=mu*(piece_time-t_part);
+
+        error+=(c_spline-p_part).squaredNorm()+(piece_time-t_part)*(piece_time-t_part);
         
     }
+
+    std::cout<<"sqrt error: "<<sqrt(error)<<"\n";
   }
 
   static int spline_descent_direction(const Data& spline, Data& direction, const double& piece_time, double& t_direction,
@@ -419,13 +426,13 @@ public:
     h_t=hessian(3*t_n,3*t_n);
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
 
-    Eigen::VectorXd ng = -grad.segment(6,(t_n-4)*3);
+    Eigen::VectorXd g = grad.segment(6,(t_n-4)*3);
     Eigen::MatrixXd h = hessian.block(6,6,(t_n-4)*3,(t_n-4)*3);
     
-    Eigen::VectorXd ng0((t_n-4)*3+1);
+    Eigen::VectorXd g0((t_n-4)*3+1);
     Eigen::MatrixXd h0((t_n-4)*3+1,(t_n-4)*3+1);
-    ng0.head((t_n-4)*3)=ng;
-    ng0((t_n-4)*3)=-g_t;
+    g0.head((t_n-4)*3)=g;
+    g0((t_n-4)*3)=g_t;
 
     h0.block(0,0,(t_n-4)*3,(t_n-4)*3)=h;
     h0((t_n-4)*3,(t_n-4)*3)=h_t;//h_t;
@@ -465,9 +472,9 @@ public:
     solver.compute(H);
     
 
-    x0 = solver.solve(ng0);
-    //x0=ng0;
-    wolfe=x0.dot(ng0);
+    x0 = -solver.solve(g0);
+    //x0=-g0;
+    wolfe=-x0.dot(g0);
     
     clock_t time1 = clock();
     std::cout<<"\ntime solve:"<<(time1-time0)/(CLOCKS_PER_SEC/1000)<<std::endl;
@@ -485,11 +492,11 @@ public:
     direction.setZero();
     direction.block(2,0,t_n-4,3)=d_;
     /*
-    std::cout<<"gn:"<<ng0.norm()<<std::endl;
+    std::cout<<"gn:"<<g0.norm()<<std::endl;
     std::cout<<"dn:"<<x0.norm()<<std::endl;
     std::cout<<"t_direction:"<<t_direction<<std::endl<<std::endl;
     */
-    gnorm=ng0.norm();
+    gnorm=g0.norm();
 
     return 1;
     //std::cout<<"gnorm:"<<gnorm<<std::endl;
@@ -498,13 +505,13 @@ public:
   static void spline_line_search(Data& spline, const Data& direction, double& piece_time, const double& t_direction,
                                  const Data& p_slack, const Eigen::VectorXd& t_slack,
                                  const Data& p_lambda, const Eigen::VectorXd& t_lambda,
-                                 const std::vector<Eigen::Matrix3d>& face_list, BVH& bvh, 
+                                 const std::vector<Eigen::RowVector3d>& vertex_list, BVH& bvh, 
                                  const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                                  const std::vector<std::vector<double>>& d_lists)
   {
     clock_t time0 = clock();
 
-    double step=Step::position_step(spline, direction,face_list, bvh);
+    double step=Step::position_step(spline, direction,vertex_list, bvh);
 
     clock_t time1 = clock();
 
@@ -535,18 +542,38 @@ public:
       step*=0.8;
       piece_time=init_time+step*t_direction;
     }
-    
-
-    max_step=step;
-    /*
+    /*    
     std::cout<<"step:"<<step<<std::endl;
     std::cout<<"result:"<<Energy::dynamic_energy(spline+step*direction,piece_time)<<
                " "<<lambda*Energy::plane_barrier_energy(spline+step*direction,c_lists,d_lists)<<
                " "<<lambda*Energy::bound_energy(spline+step*direction,piece_time)<<
                " "<<kt*whole_weight*piece_time<<std::endl<<std::endl;
-               */
+     */          
     //<<" "<<limit_energy(spline+step*direction)
     spline=spline+step*direction;
+
+    energy_file<<spline_energy(spline, piece_time,c_lists, d_lists);
+
+  }
+
+  static double spline_energy(  const Data& spline, const double& piece_time,
+                                const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
+                                const std::vector<std::vector<double>>& d_lists)
+  {
+    double energy=lambda*Energy_admm::plane_barrier_energy(spline,c_lists, d_lists) + 
+                  lambda*Energy_admm::bound_energy(spline,piece_time);
+    
+    for(int sp_id=0;sp_id<piece_num;sp_id++)
+    {
+        int init=sp_id*(order_num-2);
+
+        Data c_spline = convert_list[sp_id]*spline.block<order_num+1,3>(init,0);
+
+        energy+=Energy_admm::dynamic_energy(c_spline, piece_time);
+    }
+
+    return energy;
+
 
   }
 
